@@ -9,7 +9,7 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
         import Timeline
         form.setupUi(self)
 
-        self.timeLineController = Timeline.TimelinesContorller(form.TimeLine)
+        self.timeLineController = Timeline.TimelinesController(form.TimeLine)
         form.AddOperationBtn.clicked.connect(self.AddBlcokTest)
 
 
