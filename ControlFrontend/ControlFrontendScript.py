@@ -3,6 +3,7 @@ import ControlPanel
 import sys
 
 class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
+    testNumber = 0
     def __init__(self):
         super().__init__()
         form = ControlPanel.Ui_MainWindow()
@@ -11,10 +12,12 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
 
         self.timeLineController = Timeline.TimelinesController(form.TimeLine)
         form.AddOperationBtn.clicked.connect(self.AddBlcokTest)
+        self.timeLineController.RegisterDeleteButton(form.DeleteOperationBtn)
 
 
     def AddBlcokTest(self):
-        title = 'test block'
+        title = 'test block' + str(self.testNumber)
+        self.testNumber = self.testNumber + 1
         descriptionTest = ['this should work','sample: Time = 1ms']
         self.timeLineController.AddWave(title,descriptionTest)
         self.timeLineController.ShowBlocks()

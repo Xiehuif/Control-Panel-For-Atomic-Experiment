@@ -5,6 +5,7 @@ class EventHandlerObject(QtCore.QObject):
     _delegates : dict = None
     _parameters : dict = None
     _infos : dict = None
+    _infoActivation = False
 
     def __init__(self):
         self._delegates = {}
@@ -33,9 +34,11 @@ class EventHandlerObject(QtCore.QObject):
             return False
         elif par is None:
             func()
-            print(info())
+            if self._infoActivation:
+                print(info())
             return True
         else:
             func(par())
-            print(info())
+            if self._infoActivation:
+                print(info())
             return True

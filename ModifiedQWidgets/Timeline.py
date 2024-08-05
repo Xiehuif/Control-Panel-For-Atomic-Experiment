@@ -7,13 +7,6 @@ from QSSConstant import QSSPresetting
 
 class WaveBlock:
     # internal methods
-    def _Clear(self):
-        '''
-        这个函数只是用来包装一个清空Label的流程
-        :return: None
-        '''
-        if self._blockLabel is not None:
-            self._blockLabel.deleteLater()
 
     def _ApplyQSS(self,label : ModifiedLabels.SelectableLabel):
         '''
@@ -59,15 +52,28 @@ class WaveBlock:
         label : ModifiedLabels.SelectableLabel = self._blockLabel
         label.setFixedWidth(int(selfWidth))
 
+    def Clear(self):
+        '''
+        这个函数只是用来包装一个清空Label的流程
+        :return: None
+        '''
+        if self._blockLabel is not None:
+            self.timeLine.selectionManager.Unregister(self._blockLabel)
+            self._blockLabel.deleteLater()
+            del self._blockLabel
 
     def GenerateLabel(self) -> ModifiedLabels.SelectableLabel :
         '''
         根据注册的信息返回一个Label控件
         :return:
         '''
-        #清空组件 生成组件
-        self._Clear()
-        self._blockLabel = ModifiedLabels.SelectableLabel(self.timeLine.centralWidget,self.timeLine.selectionManager)
+        state = False
+        if self._blockLabel is not None:
+            state = self._blockLabel.IsSelected()
+        #清空组件 生成组件 应用缓存的状态
+        self.Clear()
+        self._blockLabel = ModifiedLabels.SelectableLabel(self.timeLine.centralWidget,self.timeLine.selectionManager,attachedObject=self)
+        self._blockLabel.SetSelectState(state)
         #应用文字描述
         self._ApplyText(self._blockLabel,self.title,self._featureDetail)
         #应用样式表
@@ -105,12 +111,23 @@ class TimelinesController:
         self.layout.addWidget(targetLabel)
         targetLabel.show()
 
+    def _DeleteSelectedList(self):
+        selectedList :list[ModifiedLabels.SelectableLabel] = self.selectionManager.GetSelected()
+        blocksNumber = len(selectedList)
+        for i in range(0,blocksNumber):
+            self.DeleteWave(selectedList.pop().attachedObject)
+        self.ShowBlocks()
+
     # public
     def GetTimescale(self):
         return self.timeScale
 
     def SetTimescale(self,newTimescale:int):
         self.timeScale = newTimescale
+
+
+    def RegisterDeleteButton(self,button : QtWidgets.QPushButton):
+        button.clicked.connect(self._DeleteSelectedList)
 
     def __init__(self,scrollArea : QtWidgets.QScrollArea,timeScale:int = 80):
         self.timeScale = timeScale
@@ -125,10 +142,12 @@ class TimelinesController:
 
     def AddWave(self,title : str,featureDetail : list,time:int = 10):
         wave : WaveBlock = WaveBlock(title,featureDetail,self,time)
-        self.blockList.SetPointer(self.blockList.GetLength())
+        self.blockList.SetPointer(self.blockList.GetLength() - 1)
         self.blockList.AppendDataAfterPointer(wave)
 
     def ShowBlocks(self):
+        print('Timeline Refresh its display：\n'
+              'Detected Block Number：' + str(self.blockList.GetLength()))
         self.blockList.SetPointer(0)
         self._LoadWaveIntoLayout(self.blockList.GetDataFromPointedNode())
         while self.blockList.PointerMoveForward() :
@@ -138,7 +157,10 @@ class TimelinesController:
                                             QtWidgets.QSizePolicy.Policy.Minimum)
         self.layout.addSpacerItem(self.spacer)
 
-    def DeleteWave(self):
-        pass
-        # To be done
+    def DeleteWave(self,block : WaveBlock) -> bool:
+        block.Clear()
+        return self.blockList.DeleteData(block)
+
+
+
 

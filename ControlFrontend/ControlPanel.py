@@ -49,7 +49,7 @@ class Ui_MainWindow(object):
         self.TimeLine.setWidgetResizable(True)
         self.TimeLine.setObjectName("TimeLine")
         self.TimelineContents = QtWidgets.QWidget()
-        self.TimelineContents.setGeometry(QtCore.QRect(0, 0, 448, 52))
+        self.TimelineContents.setGeometry(QtCore.QRect(0, 0, 448, 100))
         self.TimelineContents.setObjectName("TimelineContents")
         self.TimeLine.setWidget(self.TimelineContents)
         self.verticalLayout.addWidget(self.TimeLine)

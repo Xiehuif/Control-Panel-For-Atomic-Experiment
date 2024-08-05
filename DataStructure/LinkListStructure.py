@@ -24,6 +24,10 @@ class LinkList:
         def GetData(self):
             return self._data
 
+        def __del__(self):
+            del self._data
+
+
     _length: int = 0
     _head = None
     _tail = None
@@ -59,9 +63,9 @@ class LinkList:
             self._pointer = self._pointer.GetPrevious()
             return True
 
-    def AppendDataAfterPointer(self,data):
+    def AppendDataAfterPointer(self,data) -> _Node:
         if self._InitializationCheck(data):
-            return
+            return self._pointer
         else:
             newNode = self._Node(data,self._pointer,self._pointer.GetNext())
             if (self._pointer.GetNext() is not None):
@@ -69,19 +73,32 @@ class LinkList:
             self._pointer.SetNext(newNode)
             self._length = self._length + 1
             self.PointerMoveForward()
-            return
+            return newNode
+
+    def _DeleteNode(self,node):
+        if node.GetPrevious() is not None:
+            node.GetPrevious().SetNext(node.GetNext())
+        if node.GetNext() is not None:
+            node.GetNext().SetPrevious(node.GetPrevious())
+        if node is self._head:
+            self._head = node.GetNext()
+        if node is self._tail:
+            self._tail = node.GetPrevious()
+        self._length = self._length - 1
+
 
     def DeleteDataAtPointer(self):
         if self._length == 0:
             return False
+        elif self._pointer is None:
+            print('Using null pointer')
+            return False
         else:
-            if self._pointer.GetPrevious() is not None:
-                self._pointer.GetPrevious().SetNext(self._pointer.GetNext())
-            if self._pointer.GetNext() is not None:
-                self._pointer.GetNext().SetPrevious(self._pointer.GetPrevious())
+            deleted = self._pointer
             self.PointerMoveForward()
-            self._length = self._length - 1
+            self._DeleteNode(deleted)
             return True
+
 
     def GetDataFromPointedNode(self):
         return self._pointer.GetData()
@@ -97,4 +114,16 @@ class LinkList:
 
     def GetLength(self):
         return self._length
+
+    def DeleteData(self,data) -> bool:
+        tempPointer = self._head
+        while tempPointer is not None:
+            if tempPointer.GetData() is data:
+                self._DeleteNode(tempPointer)
+                return True
+            else:
+                tempPointer = tempPointer.GetNext()
+        return False
+
+
 

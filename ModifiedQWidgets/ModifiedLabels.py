@@ -31,9 +31,10 @@ class SelectableLabel(InteractableLabel):
     QSSContainer: dict = {}
     selectionManager: (SelectionManager or None) = None
 
-    def __init__(self,parent : QWidget, manager: SelectionManager):
+    def __init__(self,parent : QWidget, manager: SelectionManager,attachedObject):
         super().__init__(parent)
         self.selectionManager = manager
+        self.attachedObject = attachedObject
         manager.Register(self)
 
     def SetQSS(self,displayType: DisplayState,qss: str):
