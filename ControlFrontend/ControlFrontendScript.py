@@ -1,6 +1,9 @@
 import PyQt6
 import ControlPanel
 import sys
+import DataManager
+import ModifiedLabels
+
 
 class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
     testNumber = 0
@@ -9,18 +12,25 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
         form = ControlPanel.Ui_MainWindow()
         import Timeline
         form.setupUi(self)
-
-        self.timeLineController = Timeline.TimelinesController(form.TimeLine)
+        self.testDevice = DataManager.DeviceSchedule('test')
+        self.timeLineController = Timeline.TimelinesController(form.TimeLine,self.testDevice)
         form.AddOperationBtn.clicked.connect(self.AddBlcokTest)
-        self.timeLineController.RegisterDeleteButton(form.DeleteOperationBtn)
+        form.DeleteOperationBtn.clicked.connect(self.DeleteBlockTest)
 
 
     def AddBlcokTest(self):
         title = 'test block' + str(self.testNumber)
         self.testNumber = self.testNumber + 1
-        descriptionTest = ['this should work','sample: Time = 1ms']
-        self.timeLineController.AddWave(title,descriptionTest)
+        self.testDevice.AddWave(DataManager.WaveData(10,title,'None'))
         self.timeLineController.ShowBlocks()
+
+    def DeleteBlockTest(self):
+        deletedWaveLabel:list[ModifiedLabels.SelectableLabel] = self.timeLineController.selectionManager.GetSelected()
+        while len(deletedWaveLabel) != 0:
+            deletedWave: DataManager.WaveData = deletedWaveLabel.pop().attachedObject
+            self.testDevice.DeleteWave(deletedWave)
+        self.timeLineController.ShowBlocks()
+
 
 
 
