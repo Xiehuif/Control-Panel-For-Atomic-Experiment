@@ -3,8 +3,9 @@ import ControlPanel
 import sys
 import DataManager
 import ModifiedLabels
-
-
+import Testdevices
+import TimelinePlotWidget
+import DeviceSelector
 class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
     testNumber = 0
     def __init__(self):
@@ -12,24 +13,32 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
         form = ControlPanel.Ui_MainWindow()
         import Timeline
         form.setupUi(self)
-        self.testDevice = DataManager.DeviceSchedule('test')
-        self.timeLineController = Timeline.TimelinesController(form.TimeLine,self.testDevice)
         form.AddOperationBtn.clicked.connect(self.AddBlcokTest)
         form.DeleteOperationBtn.clicked.connect(self.DeleteBlockTest)
+        self.selector = DeviceSelector.SelectorController(form.OutputDeviceList, form.WaveTypeList)
+        self.timeLineController = Timeline.TimelinesController(form.TimeLine, self.selector)
+        self.plotController = TimelinePlotWidget.TimelinePlotWidgetController(form.waveView,self.timeLineController)
 
+    def RefreshUI(self):
+        self.timeLineController.ShowBlocks()
+        self.plotController.ReplotDevices()
 
     def AddBlcokTest(self):
         title = 'test block' + str(self.testNumber)
         self.testNumber = self.testNumber + 1
-        self.testDevice.AddWave(DataManager.WaveData(10,title,'None'))
-        self.timeLineController.ShowBlocks()
+        waveData = DataManager.WaveData(10, None, 'None')
+        self.selector.ShowParameterPanel(waveData,self.Insert)
+
+    def Insert(self, waveData: DataManager.WaveData):
+        self.selector.GetCurrentDevice().deviceSchedule.AddWave(waveData)
+        self.RefreshUI()
 
     def DeleteBlockTest(self):
         deletedWaveLabel:list[ModifiedLabels.SelectableLabel] = self.timeLineController.selectionManager.GetSelected()
         while len(deletedWaveLabel) != 0:
             deletedWave: DataManager.WaveData = deletedWaveLabel.pop().attachedObject
-            self.testDevice.DeleteWave(deletedWave)
-        self.timeLineController.ShowBlocks()
+            self.selector.GetCurrentDevice().deviceSchedule.DeleteWave(deletedWave)
+        self.RefreshUI()
 
 
 

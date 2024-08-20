@@ -1,11 +1,10 @@
-import PyQt6
-from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtWidgets
 import LinkListStructure
 import ModifiedLabels
 import MultiselectionManager
 from QSSConstant import QSSPresetting
 import DataManager
-
+import DeviceSelector
 
 class WaveBlock:
     # internal methods
@@ -96,7 +95,7 @@ class WaveBlock:
         :param waveData: 被显示的信号输出模块
         '''
         self.waveData = waveData
-        self.title = str(waveData.type)
+        self.title = waveData.title
         self.duration = str(waveData.duration)
         self.detail = str(waveData.parameter)
         self._blockLabel: (ModifiedLabels.SelectableLabel or None) = None
@@ -116,6 +115,7 @@ class TimelinesController:
         self.centralWidget.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
         self.scrollArea.setWidget(self.centralWidget)
         self.layout = QtWidgets.QHBoxLayout(self.centralWidget)
+        self.layout.setSpacing(0)
         self.spacer = QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Policy.Expanding,
                                             QtWidgets.QSizePolicy.Policy.Minimum)
         self.layout.addSpacerItem(self.spacer)
@@ -139,30 +139,30 @@ class TimelinesController:
     def SetTimescale(self, newTimescale: int):
         self.timeScale = newTimescale
 
-    def __init__(self, scrollArea: QtWidgets.QScrollArea,schedule: DataManager.DeviceSchedule, timeScale: float = 80):
+    def __init__(self, scrollArea: QtWidgets.QScrollArea, selector: DeviceSelector.SelectorController, timeScale: float = 80):
         # 显示属性
         self.timeScale = timeScale
         self.scrollArea = scrollArea
         self._InitializeWidget()
 
-        # 操作逻辑
+        # 数据接口
         self.blockList: list[WaveBlock] = []
-        self._schedule: DataManager.DeviceSchedule = schedule
-        self._scheduleData = schedule.schedule
+        self.deviceSelector = selector
+        self._scheduleData:LinkListStructure.LinkList = selector.GetCurrentDevice().deviceSchedule.scheduleData
         self.selectionManager = MultiselectionManager.SelectionManager()
 
-    def SetSchedule(self, newSchedule: DataManager.DeviceSchedule):
-        self._schedule.schedule.SetPointer(0)
-        self._ClearWidget()
-        self._schedule = newSchedule
-        self.blockList = []
-        self.ShowBlocks()
-
-    def GetSchedule(self) -> DataManager.DeviceSchedule:
-        return self._schedule
+        #绑定刷新
+        self.deviceSelector.deviceQList.currentItemChanged.connect(self.ShowBlocks)
 
     def ShowBlocks(self):
+        # 获取当前时间表
+        self._scheduleData.SetPointer(0)
+        self._scheduleData = self.deviceSelector.GetCurrentDevice().deviceSchedule.scheduleData
+        self._scheduleData.SetPointer(0)
         self._ClearWidget()
+        self.blockList = []
+
+        # 添加Label
         print('Timeline Refresh its display：\n'
               'Detected Block Number：' + str(self._scheduleData.GetLength()))
         self._scheduleData.SetPointer(0)

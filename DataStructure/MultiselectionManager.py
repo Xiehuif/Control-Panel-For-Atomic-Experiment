@@ -2,6 +2,14 @@ class SelectionManager:
     def __init__(self):
         self._target: list = []
         self._selected: list = []
+        self._changeEvent: list = []
+
+    def BindSelectionChangeEvent(self,method):
+        self._changeEvent.append(method)
+
+    def _OnSelectionChange(self):
+        for method in self._changeEvent:
+            method()
 
     def IsSelected(self,target) -> bool:
         if target in self._selected:
@@ -38,6 +46,7 @@ class SelectionManager:
     def _Unselect(self, target) -> bool:
         if self.IsSelected(target):
             self._selected.remove(target)
+            self._OnSelectionChange()
             return True
         else:
             return False
@@ -47,4 +56,5 @@ class SelectionManager:
             return False
         else:
             self._selected.append(target)
+            self._OnSelectionChange()
             return True

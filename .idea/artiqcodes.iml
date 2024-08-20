@@ -5,6 +5,9 @@
       <sourceFolder url="file://$MODULE_DIR$/ControlFrontend" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/DataStructure" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/ModifiedQWidgets" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/Devices" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ModifiedQWidgets/ControlFrontendWidget" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ModifiedQWidgets/GeneralWidgets" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

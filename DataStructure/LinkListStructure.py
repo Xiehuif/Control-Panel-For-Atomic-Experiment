@@ -49,14 +49,14 @@ class LinkList:
         else:
             return False
 
-    def PointerMoveForward(self):
+    def PointerMoveForward(self) -> bool:
         if (self._pointer.GetNext() is None):
             return False
         else:
             self._pointer = self._pointer.GetNext()
             return True
 
-    def PointerMoveBackward(self):
+    def PointerMoveBackward(self) -> bool:
         if (self._pointer.GetPrevious() is None):
             return False
         else:
@@ -101,6 +101,8 @@ class LinkList:
 
 
     def GetDataFromPointedNode(self):
+        if self._length == 0:
+            return None
         return self._pointer.GetData()
 
     def SetPointer(self,index:int):
