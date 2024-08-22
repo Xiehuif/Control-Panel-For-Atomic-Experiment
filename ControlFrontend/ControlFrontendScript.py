@@ -21,7 +21,7 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
 
     def RefreshUI(self):
         self.timeLineController.ShowBlocks()
-        self.plotController.ReplotDevices()
+        self.plotController.ReplotDevicesAsynchronously()
 
     def AddBlcokTest(self):
         title = 'test block' + str(self.testNumber)

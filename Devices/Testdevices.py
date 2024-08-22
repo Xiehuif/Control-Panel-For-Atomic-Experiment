@@ -27,6 +27,11 @@ class DemoOutput2(enum.Enum):
     Triangle = ['三角波输出',TriangleOutput]
     Sine = ['正弦输出',SineOutputData]
 
+def SquareWaveValue(time,period,dutyCycle):
+    if (time % period) < period * dutyCycle:
+        return 1
+    else:
+        return 0
 
 
 class test(DataManager.Device):
@@ -37,6 +42,13 @@ class test(DataManager.Device):
             period = parameter.get(SineOutputData.Period)
             phase = parameter.get(SineOutputData.Phase)
             return lambda x : numpy.sin(2 * np.pi * period * x + phase)
+        if type == SquareOutputData:
+            period = parameter.get(SquareOutputData.Period)
+            dutyCycle = parameter.get(SquareOutputData.DutyCycle)
+            return lambda x:SquareWaveValue(x,period,dutyCycle)
+        else:
+            return super().GetPlotMethod(waveData)
+
 
     def __init__(self):
         output = DemoOutput
@@ -48,6 +60,16 @@ class test2(DataManager.Device):
         output = DemoOutput2
         schedule = DataManager.DeviceSchedule(self)
         super().__init__('test2', output, schedule)
+
+    def GetPlotMethod(self,waveData:WaveData):
+        type = waveData.type
+        parameter: dict = waveData.parameter
+        if type == SineOutputData:
+            period = parameter.get(SineOutputData.Period)
+            phase = parameter.get(SineOutputData.Phase)
+            return lambda x : numpy.sin(2 * np.pi * period * x + phase)
+        else:
+            return super().GetPlotMethod(waveData)
 
 
 DataManager.deviceHandlerInstance.RegisterDevice(test())

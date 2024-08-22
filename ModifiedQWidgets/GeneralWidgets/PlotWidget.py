@@ -4,10 +4,13 @@ from enum import Enum
 
 import PyQt6
 from PyQt6 import QtWidgets,QtCore,QtGui
+from PyQt6.QtCore import QThread,QThreadPool,QRunnable
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.legend_handler import HandlerTuple
 
+import cProfile
 
 class FunctionPlotBuffer:
     """
@@ -25,8 +28,8 @@ class FunctionPlotBuffer:
     def CheckDefinitionDomainByArea(self,lowerXValue:float,higherXValue:float):
         """
         用于检查特定区间是否存在定义，所有区间均视为开区间
-        :param lowerXValue:
-        :param higherXValue:
+        :param lowerXValue: 区间下界
+        :param higherXValue: 区间上界
         :return: 若无定义返回None，否则返回定义所碰撞的块
         """
         if lowerXValue >= higherXValue:
@@ -124,11 +127,34 @@ class PlotWidgetController:
         self.subplot = self.figure.add_subplot()
 
         # data structure
-        self.lineList: [matplotlib.lines.Line2D] = []
+        self.groupDict: dict[str] = {}
         self.colorDict = matplotlib.colors.TABLEAU_COLORS
-        self.occupiedColor: dict[matplotlib.lines.Line2D] = {}
+        self.occupiedColor: dict[str] = {}
+        self.threadPool = QThreadPool.globalInstance()
+
+        # analysis
+        '''
+        self.profile = cProfile.Profile()
+        self.profile.enable()
+        #
+        self.profile.disable()
+        self.profile.print_stats()
+        self.threadPool.waitForDone()
+        '''
 
     # private
+    def _GenerateVectorByFunctionSyn(self,func,xVector):
+        size = xVector.size
+        y = []
+        for i in range(0,size):
+            y.append(func(xVector[i]))
+        return np.array(y)
+
+    def _RegisterGroup(self,line:matplotlib.lines.Line2D,groupName:str):
+        if groupName not in self.groupDict:
+            self.groupDict.update({groupName:[]})
+        self.groupDict.get(groupName).append(line)
+
     def _GetRandomUnoccupiedColor(self) -> str:
         for color in self.colorDict:
             codeStr: str = color
@@ -136,24 +162,62 @@ class PlotWidgetController:
                 return codeStr
         return 'black'
 
-    def _DistributeColor(self,line:matplotlib.lines.Line2D):
-        color = self._GetRandomUnoccupiedColor()
-        self.occupiedColor.update({line:color})
-        line.set_color(color)
-
     def _ExecuteFunction(self, function, x):
         # 调试用接口
         y = function(x)
         return y
 
-    def _GenerateVectorByFunction(self,func,xVector):
+    class _FunctionComputationThread(QRunnable):
+        def __init__(self,func,xVector,yVector,indexStart,indexEnd):
+            self.func = func
+            self.xVector = xVector
+            self.indexStart = indexStart
+            self.indexEnd = indexEnd
+            self.yVector = yVector
+            super().__init__()
+        def run(self):
+            for i in range(self.indexStart,self.indexEnd):
+                self.yVector[i] = self.func(self.xVector[i])
+
+    def _GenerateVectorByFunction(self,func,xVector,threadNumber = 16):
         size = xVector.size
-        y = []
-        for i in range(0,size):
-            y.append(func(xVector[i]))
+        y = [0]*size
+        computationSizeOfEachThread = int(size / threadNumber)
+        residualTask = size - (computationSizeOfEachThread * threadNumber)
+        for i in range(0,threadNumber):
+            if i == threadNumber - 1:
+                thread = self._FunctionComputationThread(func,xVector,y,i * computationSizeOfEachThread,
+                                                         (i+1) * computationSizeOfEachThread + residualTask)
+                self.threadPool.start(thread)
+            else:
+                thread = self._FunctionComputationThread(func,xVector,y,i * computationSizeOfEachThread,
+                                                         (i+1) * computationSizeOfEachThread)
+                self.threadPool.start(thread)
+        self.threadPool.waitForDone()
         return np.array(y)
 
     # public
+    def GetColor(self,groupName:str):
+        if groupName in self.occupiedColor:
+            return self.occupiedColor.get(groupName)
+        else:
+            color = self._GetRandomUnoccupiedColor()
+            self.occupiedColor.update({groupName: color})
+            return color
+
+    def ShowLegend(self):
+        lineList = []
+        titleList = []
+        for title in self.groupDict:
+            lineGroup = self.groupDict.get(title)
+            lineGroupTuple = tuple(lineGroup)
+            lineList.append(lineGroupTuple)
+            titleList.append(title)
+        self.subplot.legend(lineList, titleList, numpoints=1, handler_map={tuple: HandlerTuple(None)})
+
+    def ClearLegendRegister(self):
+        self.legendDict.clear()
+
     def PlotBuffer(self,buffer:FunctionPlotBuffer,title:str = 'default'):
         rangeTuple = buffer.GetDefinitionDomainRange()
         lower = rangeTuple[0]
@@ -168,32 +232,38 @@ class PlotWidgetController:
         self.subplot.set_xlabel(xAxisTitle)
         self.subplot.set_ylabel(yAxisTitle)
 
-    def PlotFunction(self,y,lowerBound:float,upperBound:float,resolution:int = 1000,label= 'default'):
+    def PlotFunction(self,y,lowerBound:float,upperBound:float,resolution:int = 50,label= 'default'):
         #self._ExecuteFunction(y, xValue[i])
+        resolution = int((upperBound - lowerBound) * resolution)
         xValue = np.linspace(lowerBound,upperBound,resolution)
         yValue = self._GenerateVectorByFunction(y,xValue)
         return self.PlotPoint(xValue,yValue,label)
 
     def PlotPoint(self,x:np.ndarray,y:np.ndarray,label= 'default'):
-        line = self.subplot.plot(x,y,label=label)
-        self._DistributeColor(line[0])
-        self.lineList.append(line[0])
-        self.Replot()
+        color = self.GetColor(label)
+        line = self.subplot.plot(x,y,label=label,color=color)
+        self._RegisterGroup(line[0],label)
+        self.RefreshPlot()
         return line[0]
 
-    def PlotLegend(self):
-        self.subplot.legend()
+    def ClearPlot(self):
+        groupNameList = []
+        for groupName in self.groupDict:
+            groupNameList.append(groupName)
+        for groupName in groupNameList:
+            self.DeleteGroup(groupName)
 
-    def Replot(self):
-        self.PlotLegend()
+    def RefreshPlot(self):
+        self.ShowLegend()
         self.canvas.draw()
 
-    def DeleteLine(self,line:matplotlib.lines.Line2D):
-        if line in self.lineList:
-            self.lineList.remove(line)
-            self.occupiedColor.pop(line)
-            line.remove()
-            self.Replot()
-            return True
-        else:
-            return False
+    def DeleteGroup(self,groupName:str):
+        if groupName in self.groupDict:
+            lineList = self.groupDict.pop(groupName)
+            for item in lineList:
+                line:matplotlib.lines.Line2D = item
+                line.remove()
+        if groupName in self.occupiedColor:
+            self.occupiedColor.pop(groupName)
+        self.RefreshPlot()
+
