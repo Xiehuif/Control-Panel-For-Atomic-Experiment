@@ -1,14 +1,20 @@
 
 from LinkListStructure import LinkList
+import Serialize
 import enum
 
 
-class WaveData:
-    def __init__(self,duration:float,type,parameter,title='default'):
-        self.duration = duration
-        self.type = type
-        self.parameter = parameter
-        self.title = title
+class WaveData(Serialize.Serializable):
+    def __init__(self,*args):
+        # duration:float,type,parameter,title='default'
+        if len(args) == 4:
+            self.duration = args[0]
+            self.type = args[1]
+            self.parameter = args[2]
+            self.title = args[3]
+        if len(args) == 1:
+            jsonString = args[0]
+            self.Deserialize(jsonString)
 
 class DeviceSchedule:
     def __init__(self,device):

@@ -132,11 +132,13 @@ class PlotWidgetController:
         self.occupiedColor: dict[str] = {}
         self.threadPool = QThreadPool.globalInstance()
 
-        # analysis
         '''
+        # performance analysis (be used only for debugging or optimization)
         self.profile = cProfile.Profile()
         self.profile.enable()
-        #
+        
+        # actions which are needed to be analyzed
+        
         self.profile.disable()
         self.profile.print_stats()
         self.threadPool.waitForDone()

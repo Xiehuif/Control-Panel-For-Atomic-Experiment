@@ -1,17 +1,14 @@
-
-from PyQt6 import   QtWidgets
+from PyQt6 import QtWidgets
 from PyQt6.QtWidgets import QWidget
 import EventHandler
-import  enum
+import enum
 from MultiselectionManager import SelectionManager
 
 class InteractableLabel(QtWidgets.QLabel):
-
-    # 为QT的Label控件提供响应其他事件的操作
-
+    """
+    为QT的Label控件提供响应其他事件的操作
+    """
     eventHandler: (EventHandler or None) = None
-
-
     def __init__(self,parent : QWidget):
         super().__init__(parent)
         print('Handler Online')
@@ -20,17 +17,19 @@ class InteractableLabel(QtWidgets.QLabel):
         self.installEventFilter(self.eventHandler)
 
 class DisplayState(enum.Enum):
+    """
+    处理显示状态
+    """
     standBy = 'StandBy'
     coveredBy = 'coveredBy'
     selected = 'selected'
 
 class SelectableLabel(InteractableLabel):
-
-    # 基于InteractableLabel制作的可供用于多选菜单的Label
-
+    """
+    基于InteractableLabel制作的可供用于多选菜单的Label
+    """
     QSSContainer: dict = {}
     selectionManager: (SelectionManager or None) = None
-
     def __init__(self,parent : QWidget, manager: SelectionManager,attachedObject):
         super().__init__(parent)
         self.selectionManager = manager

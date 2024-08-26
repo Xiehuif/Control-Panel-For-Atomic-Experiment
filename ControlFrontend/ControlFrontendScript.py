@@ -1,17 +1,25 @@
+# third-party libs or system libs
 import PyQt6
 import ControlPanel
 import sys
+
+# Data control
 import DataManager
-import ModifiedLabels
-import Testdevices
+
+# import devices
+import DevicesImport
+
+# Modified widgets
 import TimelinePlotWidget
 import DeviceSelector
+import Timeline
+import ModifiedLabels
+
 class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
-    testNumber = 0
     def __init__(self):
+        # parent init
         super().__init__()
         form = ControlPanel.Ui_MainWindow()
-        import Timeline
         form.setupUi(self)
         form.AddOperationBtn.clicked.connect(self.AddBlcokTest)
         form.DeleteOperationBtn.clicked.connect(self.DeleteBlockTest)
@@ -24,8 +32,6 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
         self.plotController.ReplotDevicesAsynchronously()
 
     def AddBlcokTest(self):
-        title = 'test block' + str(self.testNumber)
-        self.testNumber = self.testNumber + 1
         waveData = DataManager.WaveData(10, None, 'None')
         self.selector.ShowParameterPanel(waveData,self.Insert)
 
@@ -40,10 +46,7 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
             self.selector.GetCurrentDevice().deviceSchedule.DeleteWave(deletedWave)
         self.RefreshUI()
 
-
-
-
-
+# program entrance
 if __name__ == '__main__':
     app = PyQt6.QtWidgets.QApplication(sys.argv)
     panel = ControlFrontEnd()
