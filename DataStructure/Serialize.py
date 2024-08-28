@@ -62,17 +62,17 @@ class Serializable:
     @staticmethod
     def FromStringListToBuiltinDict(argObj:list):
         res = {}
-        load:dict = argObj[3]
-        for keyStringList in load:
-            valueStringList = load.get(keyStringList)
+        load:list = argObj[3]
+        size = len(load) / 2
+        for i in range(0,size):
+            keyIndex = 2 * i
+            valueIndex = 2 * i + 1
+            keyStringList = load[keyIndex]
+            valueStringList = load[valueIndex]
             key = Serializable.FromStringListToVarible(keyStringList)
             value = Serializable.FromStringListToVarible(valueStringList)
             res.update({key:value})
         return res
-
-
-
-
 
     def FromVaribleToStringList(self, var):
         varList = []
@@ -99,12 +99,13 @@ class Serializable:
                 varList[1] = 'Serializable'
                 varList[2] = self.FromStringListToBuiltinDict.__name__
                 varContent = list(var)
-                contentDict = {}
+                contentList = []
                 for key in var:
                     keyList = self.FromVaribleToStringList(key)
                     valueList = self.FromVaribleToStringList(var.get(key))
-                    contentDict.update({keyList: valueList})
-                varList.append(contentDict)
+                    contentList.append(keyList)
+                    contentList.append(valueList)
+                varList.append(contentList)
                 return varList
         if isinstance(var,Serializable):
             varList.append('__call__')
@@ -123,6 +124,7 @@ class Serializable:
             varList.append(customVarList[1])
         else:
             print('Serializable : can\'t convert ' + type(var).__name__)
+            print('varible name:' + var.__name__)
             return ['None']
 
 
@@ -141,6 +143,7 @@ class Serializable:
         fullMemberList = dir(self)
         varibleMemberList = []
         for member in fullMemberList:
-            if not (member.startswith('_') or type(self.__getattribute__(member)).__name__ == 'method'):
+            if not (member.startswith('_') or type(self.__getattribute__(member)).__name__ == 'method'
+                    or type(self.__getattribute__(member)).__name__ == 'function'):
                 varibleMemberList.append(member)
         return varibleMemberList

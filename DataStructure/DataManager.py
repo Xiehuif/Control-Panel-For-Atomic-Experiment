@@ -1,4 +1,3 @@
-
 from LinkListStructure import LinkList
 import Serialize
 import enum
@@ -31,11 +30,34 @@ class DeviceSchedule:
     def GetAttachedDevice(self):
         return self.device
 
+    def ScheduleSerialization(self) -> list|None:
+        self.scheduleData.SetPointer(0)
+        if self.scheduleData.GetDataFromPointedNode() is None:
+            print('null schedule:' + self.device.deviceName)
+            return None
+        else:
+            dataList = []
+            dataStr = self.scheduleData.GetDataFromPointedNode().Serialize()
+            dataList.append(dataStr)
+            while self.scheduleData.PointerMoveForward():
+                dataStr = self.scheduleData.GetDataFromPointedNode().Serialize()
+                dataList.append(dataStr)
+            return dataList
+
+    def ScheduleDeserialization(self,dataStrList:list):
+        size = len(dataStrList)
+        self.scheduleData = LinkList()
+        self.scheduleData.SetPointer(0)
+        for i in range(0,size):
+            waveData = WaveData(dataStrList[i])
+            self.AddWave(waveData)
+
+
 class Device:
-    def __init__(self,deviceName:str,deviceOutputMode,deviceSchedule:DeviceSchedule):
+    def __init__(self,deviceName:str,deviceOutputMode):
         self.deviceName = deviceName
         self.deviceOutputMode = deviceOutputMode
-        self.deviceSchedule = deviceSchedule
+        self.deviceSchedule = DeviceSchedule(self)
 
     def GetPlotMethod(self,waveData:WaveData):
         return lambda : 0
@@ -44,11 +66,15 @@ class Device:
         outputModes = {}
         for outputModeItem,outputModeValue in self.deviceOutputMode.__members__.items():
             outputName:str = outputModeValue.value[0]
-            outputModeDataEnum = outputModeValue.value[1]
+            outputModeDataEnum = outputModeValue
             outputModes.update({outputName: outputModeDataEnum})
         return outputModes
 
-
+    def DeviceSerialization(self) -> dict:
+        scheduleStrList = self.deviceSchedule.ScheduleSerialization()
+        targetDict = {}
+        targetDict.update({self.deviceName: scheduleStrList})
+        return targetDict
 
 
 class DeviceHandler:
@@ -65,6 +91,12 @@ class DeviceHandler:
         for deviceName in self.devices:
             deviceList.append(self.devices[deviceName])
         return deviceList
+
+    def GetDevice(self,deviceName:str):
+        for existedDeviceName in self.devices:
+            if existedDeviceName == deviceName:
+                return self.devices.get(deviceName)
+        return None
 
 
 deviceHandlerInstance = DeviceHandler()

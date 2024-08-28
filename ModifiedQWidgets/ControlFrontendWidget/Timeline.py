@@ -41,7 +41,7 @@ class WaveBlock:
     # public methods
     def ResizeLength(self, length: float):
         '''
-        重新定义这个信号的时常
+        重新定义这个Label的长度
         :param length: 时间长度
         :return:
         '''

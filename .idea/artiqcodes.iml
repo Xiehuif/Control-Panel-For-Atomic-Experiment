@@ -9,7 +9,7 @@
       <sourceFolder url="file://$MODULE_DIR$/ModifiedQWidgets/ControlFrontendWidget" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/ModifiedQWidgets/GeneralWidgets" isTestSource="false" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="Python 3.12 (pythonProject)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

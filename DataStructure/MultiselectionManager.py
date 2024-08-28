@@ -1,4 +1,7 @@
 class SelectionManager:
+
+    # Need reconstruct : use dict instead of list
+
     def __init__(self):
         self._target: list = []
         self._selected: list = []
@@ -10,8 +13,6 @@ class SelectionManager:
     def _OnSelectionChange(self):
         for method in self._changeEvent:
             method()
-        print('method finished')
-
     def IsSelected(self,target) -> bool:
         if target in self._selected:
             return True
@@ -32,6 +33,7 @@ class SelectionManager:
     def Clear(self):
         self._selected.clear()
         self._target.clear()
+        self._OnSelectionChange()
 
     def GetMember(self) -> list:
         return self._target

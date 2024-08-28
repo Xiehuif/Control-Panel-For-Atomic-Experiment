@@ -131,6 +131,7 @@ class PlotWidgetController:
         self.colorDict = matplotlib.colors.TABLEAU_COLORS
         self.occupiedColor: dict[str] = {}
         self.threadPool = QThreadPool.globalInstance()
+        self._breakPoints = {}
 
         '''
         # performance analysis (be used only for debugging or optimization)
@@ -177,6 +178,7 @@ class PlotWidgetController:
             self.indexEnd = indexEnd
             self.yVector = yVector
             super().__init__()
+
         def run(self):
             for i in range(self.indexStart,self.indexEnd):
                 self.yVector[i] = self.func(self.xVector[i])
@@ -198,6 +200,16 @@ class PlotWidgetController:
         self.threadPool.waitForDone()
         return np.array(y)
 
+    def _GetBreakPoint(self,groupName: str) -> tuple|None:
+        if groupName in self._breakPoints:
+            return self._breakPoints.get(groupName)
+        else:
+            return None
+
+    def _SetBreakPoint(self,groupName: str,breakPoint: tuple):
+        self._breakPoints.update({groupName: breakPoint})
+
+
     # public
     def GetColor(self,groupName:str):
         if groupName in self.occupiedColor:
@@ -217,9 +229,6 @@ class PlotWidgetController:
             titleList.append(title)
         self.subplot.legend(lineList, titleList, numpoints=1, handler_map={tuple: HandlerTuple(None)})
 
-    def ClearLegendRegister(self):
-        self.legendDict.clear()
-
     def PlotBuffer(self,buffer:FunctionPlotBuffer,title:str = 'default'):
         rangeTuple = buffer.GetDefinitionDomainRange()
         lower = rangeTuple[0]
@@ -234,16 +243,29 @@ class PlotWidgetController:
         self.subplot.set_xlabel(xAxisTitle)
         self.subplot.set_ylabel(yAxisTitle)
 
-    def PlotFunction(self,y,lowerBound:float,upperBound:float,resolution:int = 50,label= 'default'):
+    def PlotFunction(self,y,lowerBound:float,upperBound:float,resolution:int = 50,label= 'default',breakPointGroupName = None):
         #self._ExecuteFunction(y, xValue[i])
         resolution = int((upperBound - lowerBound) * resolution)
         xValue = np.linspace(lowerBound,upperBound,resolution)
         yValue = self._GenerateVectorByFunction(y,xValue)
-        return self.PlotPoint(xValue,yValue,label)
+        return self.PlotPoint(xValue,yValue,label,breakPointGroupName)
 
-    def PlotPoint(self,x:np.ndarray,y:np.ndarray,label= 'default'):
+    def PlotPoint(self,x:np.ndarray,y:np.ndarray,label= 'default',breakPointGroupName = None):
+        if breakPointGroupName is None:
+            breakPointGroupName = label
         color = self.GetColor(label)
-        line = self.subplot.plot(x,y,label=label,color=color)
+        breakPoint = self._GetBreakPoint(breakPointGroupName)
+        plotX = None
+        plotY = None
+        if breakPoint is not None:
+            plotX = np.hstack((breakPoint[0], x))
+            plotY = np.hstack((breakPoint[1], y))
+        else:
+            plotX = x
+            plotY = y
+        newBreakPoint = (plotX[plotX.size - 1],plotY[plotY.size - 1])
+        self._SetBreakPoint(breakPointGroupName,newBreakPoint)
+        line = self.subplot.plot(plotX,plotY,label=label,color=color)
         self._RegisterGroup(line[0],label)
         self.RefreshPlot()
         return line[0]
@@ -254,6 +276,12 @@ class PlotWidgetController:
             groupNameList.append(groupName)
         for groupName in groupNameList:
             self.DeleteGroup(groupName)
+        groupNameList.clear()
+        for groupName in self._breakPoints:
+            groupNameList.append(groupName)
+        for groupName in groupNameList:
+            self._breakPoints.pop(groupName)
+
 
     def RefreshPlot(self):
         self.ShowLegend()
@@ -267,5 +295,7 @@ class PlotWidgetController:
                 line.remove()
         if groupName in self.occupiedColor:
             self.occupiedColor.pop(groupName)
+        if groupName in self._breakPoints:
+            self._breakPoints.pop(groupName)
         self.RefreshPlot()
 

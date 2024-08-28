@@ -51,13 +51,15 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
                 timeRecord = timeRecord + targetData.duration
                 cycleCondition = deviceScheduleData.PointerMoveForward()
 
-    def _PlotWaveData(self,startXValue:float,waveData:DataManager.WaveData,device:DataManager.Device,groupName = None):
+    def _PlotWaveData(self,startXValue:float,waveData:DataManager.WaveData,device:DataManager.Device,colorGroupName = None,breakPointGroupName = None):
         endXValue:float = startXValue + waveData.duration
         plotMethod = device.GetPlotMethod(waveData)
         func = lambda x : plotMethod(x - startXValue)
-        if groupName == None:
-            groupName = device.deviceName
-        self.PlotFunction(func,startXValue,endXValue,label=groupName)
+        if colorGroupName == None:
+            colorGroupName = device.deviceName
+        if breakPointGroupName == None:
+            breakPointGroupName = device.deviceName
+        self.PlotFunction(func,startXValue,endXValue,label=colorGroupName,breakPointGroupName=breakPointGroupName)
 
     def _PlotDevice(self,device:DataManager.Device):
         time:float = 0
@@ -83,6 +85,7 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
                 self._PlotWaveData(time,waveData,device)
             time = time + waveData.duration
             breakCondition = scheduleData.PointerMoveForward()
+
     def RefreshBufferDict(self):
         self.bufferDict = {}
         for device in self.deviceHandler.GetDevices():

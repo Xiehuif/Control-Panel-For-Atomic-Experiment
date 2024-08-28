@@ -38,11 +38,11 @@ class test(DataManager.Device):
     def GetPlotMethod(self,waveData:WaveData):
         type = waveData.type
         parameter: dict = waveData.parameter
-        if type == SineOutputData:
+        if type == DemoOutput.Sine:
             period = parameter.get(SineOutputData.Period)
             phase = parameter.get(SineOutputData.Phase)
             return lambda x : numpy.sin(2 * np.pi * period * x + phase)
-        if type == SquareOutputData:
+        if type == DemoOutput.Square:
             period = parameter.get(SquareOutputData.Period)
             dutyCycle = parameter.get(SquareOutputData.DutyCycle)
             return lambda x:SquareWaveValue(x,period,dutyCycle)
@@ -52,19 +52,17 @@ class test(DataManager.Device):
 
     def __init__(self):
         output = DemoOutput
-        schedule = DataManager.DeviceSchedule(self)
-        super().__init__('test1',output,schedule)
+        super().__init__('test1',output)
 
 class test2(DataManager.Device):
     def __init__(self):
         output = DemoOutput2
-        schedule = DataManager.DeviceSchedule(self)
-        super().__init__('test2', output, schedule)
+        super().__init__('test2', output)
 
     def GetPlotMethod(self,waveData:WaveData):
         type = waveData.type
         parameter: dict = waveData.parameter
-        if type == SineOutputData:
+        if type == DemoOutput2.Sine:
             period = parameter.get(SineOutputData.Period)
             phase = parameter.get(SineOutputData.Phase)
             return lambda x : numpy.sin(2 * np.pi * period * x + phase)

@@ -24,7 +24,7 @@ class ParameterWidgetHandler:
 
     def GetDataClarifications(self,dataEnum) -> list:
         dataClarifications = []
-        for clarificationName,clarification in dataEnum.__members__.items():
+        for clarificationName,clarification in dataEnum.value[1].__members__.items():
             dataClarifications.append(clarification)
         return dataClarifications
 
