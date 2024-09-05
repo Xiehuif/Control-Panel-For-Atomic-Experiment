@@ -13,6 +13,7 @@ class SelectionManager:
     def _OnSelectionChange(self):
         for method in self._changeEvent:
             method()
+
     def IsSelected(self,target) -> bool:
         if target in self._selected:
             return True

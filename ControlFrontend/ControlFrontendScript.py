@@ -26,11 +26,12 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
         # 连接事件
         form = ControlPanel.Ui_MainWindow()
         form.setupUi(self)
-        form.AddOperationBtn.clicked.connect(self.AddBlcokTest)
+        form.AddOperationBtn.clicked.connect(self.AddBlockTest)
         form.DeleteOperationBtn.clicked.connect(self.DeleteBlockTest)
         form.Open.triggered.connect(self.OpenFileAction)
         form.Save.triggered.connect(self.SaveFileAction)
         form.ApplyTimescaleBtn.clicked.connect(self.SetTimelineTimescale)
+        form.ModifyOperationBtn.clicked.connect(self.ModifyBlockTest)
 
         # 暴露接口
         self.timeScaleEdit = form.TimescaleSetting
@@ -93,10 +94,13 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
             print('未知读取错误')
         else:
             # 反序列化json为文本字典
-            deviceStrDict = json.loads(targetStr)
-            # 提交各设备进行波形数据的反序列化
-
-            
+            deviceStrDict:dict = json.loads(targetStr)
+            for device in DataManager.deviceHandlerInstance.GetDevices():
+                # 提交各设备进行波形数据的反序列化
+                dataStrList = deviceStrDict.get(device.deviceName)
+                device.DeviceDeserialization(dataStrList)
+                self.RefreshUI()
+            return
 
     def SaveFileAction(self):
         # 呼出文件调用窗口
@@ -108,7 +112,7 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
             for device in deviceList:
                 deviceStrDict = device.DeviceSerialization()
                 targetDict.update(deviceStrDict)
-            targetStr = json.dumps(targetDict)
+            targetStr = json.dumps(targetDict,indent=4)
 
             # 获取文件保存位置，打开并写入
             fileDir = fileDirList[0]
@@ -121,17 +125,26 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
             else:
                 print('文件打开失败')
 
-
     def RefreshUI(self):
         self.timeLineController.ShowBlocks()
         self.plotController.ReplotDevicesAsynchronously()
 
-    def AddBlcokTest(self):
-        waveData = DataManager.WaveData(10, None, 'None')
-        self.selector.ShowParameterPanel(waveData,self.Insert)
+    def AddBlockTest(self):
+        waveData = DataManager.WaveData()
+        self.selector.ShowParameterPanel(waveData,lambda: self.AddWaveData(waveData))
+        self.RefreshUI()
 
-    def Insert(self, waveData: DataManager.WaveData):
+    def AddWaveData(self, waveData: DataManager.WaveData):
         self.selector.GetCurrentDevice().deviceSchedule.AddWave(waveData)
+
+    def ModifyBlockTest(self):
+        selectedWaveLabels = self.timeLineController.selectionManager.GetSelected()
+        if len(selectedWaveLabels) != 1:
+            return
+        selectedWaveData = selectedWaveLabels[0].attachedObject
+        newWaveData = DataManager.WaveData()
+        newWaveData.CopyFrom(selectedWaveData)
+        self.selector.ShowParameterPanel(newWaveData, lambda :selectedWaveData.CopyFrom(newWaveData))
         self.RefreshUI()
 
     def DeleteBlockTest(self):
@@ -140,6 +153,13 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
             deletedWave: DataManager.WaveData = deletedWaveLabel.pop().attachedObject
             self.selector.GetCurrentDevice().deviceSchedule.DeleteWave(deletedWave)
         self.RefreshUI()
+
+    def InsertBlockTest(self):
+        selectedWaveLabels = self.timeLineController.selectionManager.GetSelected()
+        if len(selectedWaveLabels) != 1:
+            return
+        selectedWaveData: DataManager.WaveData = selectedWaveLabels[0].attachedObject
+        self.selector.GetCurrentDevice().deviceSchedule.scheduleData.SetPointer()
 
 # program entrance
 if __name__ == '__main__':

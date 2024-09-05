@@ -9,8 +9,11 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.legend_handler import HandlerTuple
-
+import matplotlib
 import cProfile
+
+matplotlib.rcParams['font.family'] = 'SimHei'  # 或其他支持中文的字体
+matplotlib.rcParams['axes.unicode_minus'] = False  # 解决负号'-'显示为方块的问题
 
 class FunctionPlotBuffer:
     """
@@ -209,7 +212,6 @@ class PlotWidgetController:
     def _SetBreakPoint(self,groupName: str,breakPoint: tuple):
         self._breakPoints.update({groupName: breakPoint})
 
-
     # public
     def GetColor(self,groupName:str):
         if groupName in self.occupiedColor:
@@ -227,7 +229,7 @@ class PlotWidgetController:
             lineGroupTuple = tuple(lineGroup)
             lineList.append(lineGroupTuple)
             titleList.append(title)
-        self.subplot.legend(lineList, titleList, numpoints=1, handler_map={tuple: HandlerTuple(None)})
+        self.subplot.legend(lineList, titleList, numpoints=1, handler_map={tuple: HandlerTuple(None)}, loc='upper right')
 
     def PlotBuffer(self,buffer:FunctionPlotBuffer,title:str = 'default'):
         rangeTuple = buffer.GetDefinitionDomainRange()

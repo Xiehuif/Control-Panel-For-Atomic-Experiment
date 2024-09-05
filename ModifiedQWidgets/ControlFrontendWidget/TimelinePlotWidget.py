@@ -8,6 +8,7 @@ import Timeline
 import DataManager
 import matplotlib
 class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
+
     def __init__(self,timelinePlotWidget:QtWidgets.QWidget,timeline:Timeline.TimelinesController):
         super().__init__(timelinePlotWidget)
         self.timeline = timeline
@@ -62,6 +63,8 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
         self.PlotFunction(func,startXValue,endXValue,label=colorGroupName,breakPointGroupName=breakPointGroupName)
 
     def _PlotDevice(self,device:DataManager.Device):
+
+        # 数据初始化
         time:float = 0
         currentDeviceName = self.timeline.deviceSelector.GetCurrentDevice()
         isCurrentDevice = (currentDeviceName == device)
@@ -69,6 +72,9 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
         scheduleData.SetPointer(0)
         breakCondition = True
         multiselectionMgr = self.timeline.selectionManager
+        seletionMark = False
+
+        # 遍历scheduleData中WaveData
         while (scheduleData.GetDataFromPointedNode() is not None) and breakCondition:
             waveData: DataManager.WaveData = scheduleData.GetDataFromPointedNode()
             seletionMark = False
@@ -101,6 +107,7 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
             self.controller = controller
             super().__init__()
             self.qmut = QMutex()
+
         def run(self):
             self.qmut.lock()
             print('plot start')

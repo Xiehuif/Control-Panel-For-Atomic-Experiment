@@ -99,7 +99,6 @@ class LinkList:
             self._DeleteNode(deleted)
             return True
 
-
     def GetDataFromPointedNode(self):
         if self._length == 0:
             return None

@@ -58,7 +58,7 @@ class DemoDevice(DataManager.Device):
         else:
             return super().GetPlotMethod(waveData)
 
-    def SquareWaveValue(timeValue,period,higherPeak,lowerPeak,initialTime,dutyCycle):
+    def SquareWaveValue(self,timeValue,period,higherPeak,lowerPeak,initialTime,dutyCycle):
         if ((timeValue + initialTime) % period < period * dutyCycle):
             return higherPeak
         else:

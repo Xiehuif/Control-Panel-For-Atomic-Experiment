@@ -1,11 +1,23 @@
 from LinkListStructure import LinkList
 import Serialize
 import enum
-
+import copy
 
 class WaveData(Serialize.Serializable):
+
+    def CopyFrom(self,waveData):
+        self.duration = copy.deepcopy(waveData.duration)
+        self.type = copy.deepcopy(waveData.type)
+        self.parameter = copy.deepcopy(waveData.parameter)
+        self.title = copy.deepcopy(waveData.title)
+
     def __init__(self,*args):
         # duration:float,type,parameter,title='default'
+        if len(args) == 0:
+            self.duration = None
+            self.type = None
+            self.parameter = None
+            self.title = None
         if len(args) == 4:
             self.duration = args[0]
             self.type = args[1]
@@ -19,6 +31,9 @@ class DeviceSchedule:
     def __init__(self,device):
         self.device = device
         self.scheduleData: LinkList = LinkList()
+
+    def Reset(self):
+        self.scheduleData = LinkList()
 
     def AddWave(self,wave:WaveData):
         self.scheduleData.SetPointer(self.scheduleData.GetLength()-1)
@@ -45,6 +60,9 @@ class DeviceSchedule:
             return dataList
 
     def ScheduleDeserialization(self,dataStrList:list):
+        if dataStrList is None:
+            self.Reset()
+            return
         size = len(dataStrList)
         self.scheduleData = LinkList()
         self.scheduleData.SetPointer(0)
@@ -76,26 +94,34 @@ class Device:
         targetDict.update({self.deviceName: scheduleStrList})
         return targetDict
 
+    def DeviceDeserialization(self,dataStrList:list):
+        self.deviceSchedule.ScheduleDeserialization(dataStrList)
+        return
+
 
 class DeviceHandler:
     def __init__(self):
-        self.devices = {}
-        self.devicesNameList = []
+        self._devices = {}
+
+    def GetDeviceNames(self) -> list[str]:
+        names:[str] = []
+        for deviceName in self._devices:
+            names.append(deviceName)
+        return names
 
     def RegisterDevice(self,device:Device):
-        self.devicesNameList.append(device.deviceName)
-        self.devices.update({device.deviceName:device})
+        self._devices.update({device.deviceName:device})
 
     def GetDevices(self) -> list[Device]:
         deviceList:[Device] = []
-        for deviceName in self.devices:
-            deviceList.append(self.devices[deviceName])
+        for deviceName in self._devices:
+            deviceList.append(self._devices[deviceName])
         return deviceList
 
     def GetDevice(self,deviceName:str):
-        for existedDeviceName in self.devices:
+        for existedDeviceName in self._devices:
             if existedDeviceName == deviceName:
-                return self.devices.get(deviceName)
+                return self._devices.get(deviceName)
         return None
 
 

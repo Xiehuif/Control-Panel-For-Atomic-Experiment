@@ -40,7 +40,7 @@ class Serializable:
     @staticmethod
     def FromStringListToBuiltinIterable(argObj:list):
         res = []
-        load:list = argObj[3]
+        load:list = argObj
         sizeNum = len(load)
         for i in range(0,sizeNum):
             obj = Serializable.FromStringListToVarible(load[i])
@@ -62,8 +62,10 @@ class Serializable:
     @staticmethod
     def FromStringListToBuiltinDict(argObj:list):
         res = {}
-        load:list = argObj[3]
-        size = len(load) / 2
+        load:list = argObj
+        if len(load) % 2 != 0:
+            print('Deserialization : DATA ERROR -- size of list  % 2 is not 0')
+        size = int(len(load) / 2)
         for i in range(0,size):
             keyIndex = 2 * i
             valueIndex = 2 * i + 1
@@ -74,35 +76,36 @@ class Serializable:
             res.update({key:value})
         return res
 
-    def FromVaribleToStringList(self, var):
+    @staticmethod
+    def FromVaribleToStringList(var):
         varList = []
         varList.append(type(var).__module__)
         varList.append(type(var).__name__)
         if type(var).__module__ == 'builtins':
             varList.append('__call__')
             if isinstance(var, (list, tuple, set)):
-                varList[0] = self.__module__
-                varList[1] = 'Serializable'
-                varList[2] = self.FromStringListToBuiltinIterable.__name__ + type(var).__name__
+                varList[0] = Serializable.__module__
+                varList[1] = Serializable.__name__
+                varList[2] = Serializable.FromStringListToBuiltinIterable.__name__ + type(var).__name__
                 varContent = list(var)
                 contentList = []
                 size = len(varContent)
                 for i in range(0,size):
-                    contentList.append(self.FromVaribleToStringList(varContent[i]))
+                    contentList.append(Serializable.FromVaribleToStringList(varContent[i]))
                 varList.append(contentList)
                 return varList
             if isinstance(var, (int, float, str, bool)):
                 varList.append(str(var))
                 return varList
             if isinstance(var, dict):
-                varList[0] = self.__module__
-                varList[1] = 'Serializable'
-                varList[2] = self.FromStringListToBuiltinDict.__name__
+                varList[0] = Serializable.__module__
+                varList[1] = Serializable.__name__
+                varList[2] = Serializable.FromStringListToBuiltinDict.__name__
                 varContent = list(var)
                 contentList = []
                 for key in var:
-                    keyList = self.FromVaribleToStringList(key)
-                    valueList = self.FromVaribleToStringList(var.get(key))
+                    keyList = Serializable.FromVaribleToStringList(key)
+                    valueList = Serializable.FromVaribleToStringList(var.get(key))
                     contentList.append(keyList)
                     contentList.append(valueList)
                 varList.append(contentList)
@@ -115,7 +118,7 @@ class Serializable:
             varList.append('__getitem__')
             varList.append(var.name)
             return varList
-        customVarList = self.ConvertObjectToVaribleStringList(var)
+        customVarList = Serializable.ConvertObjectToVaribleStringList(var)
         if customVarList is None:
             print('Serializable : can\'t convert ' + type(var).__name__)
             return ['None']
