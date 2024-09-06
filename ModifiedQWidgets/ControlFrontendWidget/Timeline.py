@@ -1,5 +1,4 @@
 from PyQt6 import QtCore, QtWidgets
-import LinkListStructure
 import ModifiedLabels
 import MultiselectionManager
 from QSSConstant import QSSPresetting
@@ -148,7 +147,7 @@ class TimelinesController:
         # 数据接口
         self.blockList: list[WaveBlock] = []
         self.deviceSelector = selector
-        self._scheduleData:LinkListStructure.LinkList = selector.GetCurrentDevice().deviceSchedule.scheduleData
+        self._scheduleData: list[DataManager.WaveData] = selector.GetCurrentDevice().deviceSchedule.scheduleData
         self.selectionManager = MultiselectionManager.SelectionManager()
 
         #绑定刷新
@@ -156,20 +155,16 @@ class TimelinesController:
 
     def ShowBlocks(self):
         # 获取当前时间表
-        self._scheduleData.SetPointer(0)
-        self._scheduleData = self.deviceSelector.GetCurrentDevice().deviceSchedule.scheduleData
-        self._scheduleData.SetPointer(0)
+        self._scheduleData: list[DataManager.WaveData] = self.deviceSelector.GetCurrentDevice().deviceSchedule.scheduleData
         self._ClearWidget()
         self.blockList = []
-
+        length = len(self._scheduleData)
         # 添加Label
         print('Timeline Refresh its display：\n'
-              'Detected Block Number：' + str(self._scheduleData.GetLength()))
-        self._scheduleData.SetPointer(0)
-        if self._scheduleData.GetDataFromPointedNode() is None:
+              'Detected Block Number：' + str(length))
+        if length == 0:
             print('Timeline null')
             return
-        self._LoadWaveIntoLayout(self._scheduleData.GetDataFromPointedNode())
-        while self._scheduleData.PointerMoveForward():
-            self._LoadWaveIntoLayout(self._scheduleData.GetDataFromPointedNode())
+        for i in range(0,length):
+            self._LoadWaveIntoLayout(self._scheduleData[i])
         self._ResetSpacer()

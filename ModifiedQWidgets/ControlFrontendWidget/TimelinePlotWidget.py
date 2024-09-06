@@ -1,7 +1,6 @@
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QThread, QMutex
 
-import LinkListStructure
 import ModifiedLabels
 import PlotWidget
 import Timeline
@@ -20,8 +19,8 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
     def _AddDeviceBuffer(self,device:DataManager.Device,bufferDict:dict):
         selectedDevice = self.timeline.deviceSelector.GetCurrentDevice()
         selectedLabel = self.timeline.selectionManager.GetSelected()
-        deviceScheduleData = device.deviceSchedule.scheduleData
-        deviceScheduleData.SetPointer(0)
+        deviceScheduleData: list[DataManager.WaveData] = device.deviceSchedule.scheduleData
+        length = len(deviceScheduleData)
         timeRecord = 0.0
         cycleCondition = True
         if device == selectedDevice:
@@ -30,27 +29,25 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
             normalBuffer = PlotWidget.FunctionPlotBuffer()
             bufferDict.update({-1 : highlightBuffer})
             bufferDict.update({device.deviceName:normalBuffer})
-            while deviceScheduleData.GetDataFromPointedNode() is not None and cycleCondition:
-                targetData : DataManager.WaveData = deviceScheduleData.GetDataFromPointedNode()
+            for i in range(0,length):
+                targetData: DataManager.WaveData = deviceScheduleData[i]
                 func = device.GetPlotMethod(targetData)
                 isSelected = False
                 for label in selectedLabel:
                     isSelected = (label.attachedObject == targetData)
                 if isSelected:
-                    highlightBuffer.AddBufferBlock(func,timeRecord,timeRecord + targetData.duration)
+                    highlightBuffer.AddBufferBlock(func, timeRecord, timeRecord + targetData.duration)
                 else:
-                    normalBuffer.AddBufferBlock(func,timeRecord,timeRecord + targetData.duration)
+                    normalBuffer.AddBufferBlock(func, timeRecord, timeRecord + targetData.duration)
                 timeRecord = timeRecord + targetData.duration
-                cycleCondition = deviceScheduleData.PointerMoveForward()
         else:
             buffer = PlotWidget.FunctionPlotBuffer()
             bufferDict.update({device.deviceName:buffer})
-            while deviceScheduleData.GetDataFromPointedNode() is not None and cycleCondition:
-                targetData : DataManager.WaveData = deviceScheduleData.GetDataFromPointedNode()
+            for i in range(0, length):
+                targetData : DataManager.WaveData = deviceScheduleData[i]
                 func = device.GetPlotMethod(targetData)
                 buffer.AddBufferBlock(func,timeRecord,timeRecord + targetData.duration)
                 timeRecord = timeRecord + targetData.duration
-                cycleCondition = deviceScheduleData.PointerMoveForward()
 
     def _PlotWaveData(self,startXValue:float,waveData:DataManager.WaveData,device:DataManager.Device,colorGroupName = None,breakPointGroupName = None):
         endXValue:float = startXValue + waveData.duration
@@ -68,29 +65,27 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
         time:float = 0
         currentDeviceName = self.timeline.deviceSelector.GetCurrentDevice()
         isCurrentDevice = (currentDeviceName == device)
-        scheduleData : LinkListStructure.LinkList = device.deviceSchedule.scheduleData
-        scheduleData.SetPointer(0)
+        scheduleData : list[DataManager.WaveData] = device.deviceSchedule.scheduleData
         breakCondition = True
         multiselectionMgr = self.timeline.selectionManager
-        seletionMark = False
-
+        selectionMark = False
+        length = len(scheduleData)
         # 遍历scheduleData中WaveData
-        while (scheduleData.GetDataFromPointedNode() is not None) and breakCondition:
-            waveData: DataManager.WaveData = scheduleData.GetDataFromPointedNode()
-            seletionMark = False
+        for i in range(0,length):
+            waveData: DataManager.WaveData = scheduleData[i]
+            selectionMark = False
             if isCurrentDevice:
                 for item in multiselectionMgr.GetSelected():
                     label : ModifiedLabels.SelectableLabel = item
                     if label.attachedObject is waveData:
-                        seletionMark = True
-                if seletionMark:
+                        selectionMark = True
+                if selectionMark:
                     self._PlotWaveData(time,waveData, device, device.deviceName + ':已选中')
                 else:
                     self._PlotWaveData(time, waveData, device)
             else:
                 self._PlotWaveData(time,waveData,device)
             time = time + waveData.duration
-            breakCondition = scheduleData.PointerMoveForward()
 
     def RefreshBufferDict(self):
         self.bufferDict = {}

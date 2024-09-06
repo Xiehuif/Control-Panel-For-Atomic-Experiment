@@ -6,7 +6,6 @@ class EventHandlerObject(QtCore.QObject):
     _parameters : dict = None
     _infos : dict = None
     _infoActivation = False
-
     def __init__(self):
         self._delegates = {}
         self._parameters = {}

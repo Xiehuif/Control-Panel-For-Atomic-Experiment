@@ -159,7 +159,6 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
         if len(selectedWaveLabels) != 1:
             return
         selectedWaveData: DataManager.WaveData = selectedWaveLabels[0].attachedObject
-        self.selector.GetCurrentDevice().deviceSchedule.scheduleData.SetPointer()
 
 # program entrance
 if __name__ == '__main__':
@@ -167,5 +166,3 @@ if __name__ == '__main__':
     panel = ControlFrontEnd()
     panel.show()
     sys.exit(app.exec())
-
-

@@ -1,4 +1,3 @@
-from LinkListStructure import LinkList
 import Serialize
 import enum
 import copy
@@ -29,33 +28,30 @@ class WaveData(Serialize.Serializable):
 
 class DeviceSchedule:
     def __init__(self,device):
-        self.device = device
-        self.scheduleData: LinkList = LinkList()
+        self._device = device
+        self.scheduleData: list[WaveData] = []
 
     def Reset(self):
-        self.scheduleData = LinkList()
+        self.scheduleData: list[WaveData] = []
 
     def AddWave(self,wave:WaveData):
-        self.scheduleData.SetPointer(self.scheduleData.GetLength()-1)
-        self.scheduleData.AppendDataAfterPointer(wave)
+        self.scheduleData.append(wave)
 
     def DeleteWave(self,wave:WaveData):
-        return self.scheduleData.DeleteData(wave)
+        return self.scheduleData.remove(wave)
 
     def GetAttachedDevice(self):
-        return self.device
+        return self._device
 
     def ScheduleSerialization(self) -> list|None:
-        self.scheduleData.SetPointer(0)
-        if self.scheduleData.GetDataFromPointedNode() is None:
-            print('null schedule:' + self.device.deviceName)
+        length = len(self.scheduleData)
+        if length == 0:
+            print('null schedule:' + self._device.deviceName)
             return None
         else:
             dataList = []
-            dataStr = self.scheduleData.GetDataFromPointedNode().Serialize()
-            dataList.append(dataStr)
-            while self.scheduleData.PointerMoveForward():
-                dataStr = self.scheduleData.GetDataFromPointedNode().Serialize()
+            for i in range(0,length):
+                dataStr = self.scheduleData[i].Serialize()
                 dataList.append(dataStr)
             return dataList
 
@@ -64,8 +60,7 @@ class DeviceSchedule:
             self.Reset()
             return
         size = len(dataStrList)
-        self.scheduleData = LinkList()
-        self.scheduleData.SetPointer(0)
+        self.scheduleData: list[WaveData] = []
         for i in range(0,size):
             waveData = WaveData(dataStrList[i])
             self.AddWave(waveData)
@@ -78,7 +73,8 @@ class Device:
         self.deviceSchedule = DeviceSchedule(self)
 
     def GetPlotMethod(self,waveData:WaveData):
-        return lambda : 0
+        # 此方法应由不同Device的派生重载以用于绘图
+        return lambda: 0
 
     def GetOutputModes(self) -> dict:
         outputModes = {}
