@@ -3,7 +3,7 @@ import enum
 import copy
 
 class WaveData(Serialize.Serializable):
-
+    __slots__ = ('duration', 'type', 'parameter', 'title')
     def CopyFrom(self,waveData):
         self.duration = copy.deepcopy(waveData.duration)
         self.type = copy.deepcopy(waveData.type)
@@ -73,8 +73,20 @@ class Device:
         self.deviceSchedule = DeviceSchedule(self)
 
     def GetPlotMethod(self,waveData:WaveData):
-        # 此方法应由不同Device的派生重载以用于绘图
+        """
+        此方法由不同Device进行重载从而为不同的Device提供波形绘图功能
+        :param waveData: 被绘制的波形
+        :return: 用于绘制波形的函数
+        """
         return lambda: 0
+
+    def GetDuration(self,waveData:WaveData) -> float:
+        """
+        此方法由不同的Device进行重载从而预估不同的Device输出不同波形时所需要的时间
+        :param waveData: 被评估的波形
+        :return: 所用时长
+        """
+        return 0
 
     def GetOutputModes(self) -> dict:
         outputModes = {}
@@ -92,6 +104,13 @@ class Device:
 
     def DeviceDeserialization(self,dataStrList:list):
         self.deviceSchedule.ScheduleDeserialization(dataStrList)
+        return
+
+    def RunDevice(self):
+        '''
+        设备运行入口
+        :return:
+        '''
         return
 
 

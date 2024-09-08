@@ -6,12 +6,12 @@ from DataManager import WaveData
 
 # 定义不同输出类型波形所需各项数据，注意格式: 数据集合 = ['数据名称',数据类型]
 class SineOutputData(Enum):
-    Period = ['频率',float]
+    Period = ['周期',float]
     Phase = ['初始相位',float]
     Amplitude = ['振幅',float]
 
 class SquareOutputData(Enum):
-    Period = ['频率', float]
+    Period = ['周期', float]
     InitialTime = ['初始时间', float]
     DutyCycle = ['占空比', float]
     HigherPeak = ['最大值', float]
@@ -46,7 +46,7 @@ class DemoDevice(DataManager.Device):
             phase = parameter.get(SineOutputData.Phase)
             amp = parameter.get(SineOutputData.Amplitude)
             # 直接返回 A sin(2 \pi T + \phi)
-            return lambda x: amp * np.sin(2 * np.pi * period * x + phase)
+            return lambda x: amp * np.sin(2 * np.pi * x / period + phase)
         if type == DemoOutput.Square:
             period = parameter.get(SquareOutputData.Period)
             higherPeak = parameter.get(SquareOutputData.HigherPeak)

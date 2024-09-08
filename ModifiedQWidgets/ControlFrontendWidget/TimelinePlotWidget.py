@@ -5,7 +5,7 @@ import ModifiedLabels
 import PlotWidget
 import Timeline
 import DataManager
-import matplotlib
+import cProfile
 class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
 
     def __init__(self,timelinePlotWidget:QtWidgets.QWidget,timeline:Timeline.TimelinesController):
@@ -15,6 +15,7 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
         self.deviceHandler = DataManager.deviceHandlerInstance
         self.bufferDict = {}
         self.plotLines = []
+        self.plotThread = self.PlotThread(self)
 
     def _AddDeviceBuffer(self,device:DataManager.Device,bufferDict:dict):
         selectedDevice = self.timeline.deviceSelector.GetCurrentDevice()
@@ -93,9 +94,11 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
             self._AddDeviceBuffer(device,self.bufferDict)
 
     def ReplotDevicesSynchronously(self):
+        print('Timeline plot redraw')
         self.ClearPlot()
         for device in self.deviceHandler.GetDevices():
             self._PlotDevice(device)
+        self.DrawPlot()
 
     class PlotThread(QThread):
         def __init__(self,controller):
@@ -110,10 +113,7 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
             self.qmut.unlock()
 
     def ReplotDevicesAsynchronously(self):
-        self.ReplotDevicesSynchronously()
-        # 多线程会造成无法运行的bug，暂时搁置
-        # threadController = self.PlotThread(self)
-        # threadController.start(QThread.Priority.LowestPriority)
+        self.plotThread.start(QThread.Priority.LowestPriority)
 
 
 

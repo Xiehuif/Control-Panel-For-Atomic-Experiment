@@ -6,14 +6,15 @@ import PyQt6
 from PyQt6 import QtWidgets,QtCore,QtGui
 from PyQt6.QtCore import QThread,QThreadPool,QRunnable
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qtcairo import FigureCanvasQTCairo as FigureCanvas
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.legend_handler import HandlerTuple
-import matplotlib
 import cProfile
 
 matplotlib.rcParams['font.family'] = 'SimHei'  # 或其他支持中文的字体
 matplotlib.rcParams['axes.unicode_minus'] = False  # 解决负号'-'显示为方块的问题
+matplotlib.use('qtcairo')
+print(matplotlib.get_backend())
 
 class FunctionPlotBuffer:
     """
@@ -111,7 +112,6 @@ class FunctionPlotBuffer:
         self.bufferList: [dict] = []
         return
 
-
 class PlotWidgetController:
     # entrance
     def __init__(self,parent:QtWidgets.QWidget):
@@ -136,17 +136,7 @@ class PlotWidgetController:
         self.threadPool = QThreadPool.globalInstance()
         self._breakPoints = {}
 
-        '''
         # performance analysis (be used only for debugging or optimization)
-        self.profile = cProfile.Profile()
-        self.profile.enable()
-        
-        # actions which are needed to be analyzed
-        
-        self.profile.disable()
-        self.profile.print_stats()
-        self.threadPool.waitForDone()
-        '''
 
     # private
     def _GenerateVectorByFunctionSyn(self,func,xVector):
@@ -245,9 +235,9 @@ class PlotWidgetController:
         self.subplot.set_xlabel(xAxisTitle)
         self.subplot.set_ylabel(yAxisTitle)
 
-    def PlotFunction(self,y,lowerBound:float,upperBound:float,resolution:int = 50,label= 'default',breakPointGroupName = None):
+    def PlotFunction(self,y,lowerBound:float,upperBound:float,resolutionRate:int = 50,label= 'default',breakPointGroupName = None):
         #self._ExecuteFunction(y, xValue[i])
-        resolution = int((upperBound - lowerBound) * resolution)
+        resolution = int((upperBound - lowerBound) * resolutionRate)
         xValue = np.linspace(lowerBound,upperBound,resolution)
         yValue = self._GenerateVectorByFunction(y,xValue)
         return self.PlotPoint(xValue,yValue,label,breakPointGroupName)
@@ -269,7 +259,6 @@ class PlotWidgetController:
         self._SetBreakPoint(breakPointGroupName,newBreakPoint)
         line = self.subplot.plot(plotX,plotY,label=label,color=color)
         self._RegisterGroup(line[0],label)
-        self.RefreshPlot()
         return line[0]
 
     def ClearPlot(self):
@@ -284,8 +273,7 @@ class PlotWidgetController:
         for groupName in groupNameList:
             self._breakPoints.pop(groupName)
 
-
-    def RefreshPlot(self):
+    def DrawPlot(self):
         self.ShowLegend()
         self.canvas.draw()
 
@@ -299,5 +287,4 @@ class PlotWidgetController:
             self.occupiedColor.pop(groupName)
         if groupName in self._breakPoints:
             self._breakPoints.pop(groupName)
-        self.RefreshPlot()
 

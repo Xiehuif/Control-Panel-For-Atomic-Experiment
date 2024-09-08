@@ -1,5 +1,6 @@
 # third-party libs or system libs
 import json
+import cProfile
 
 import PyQt6
 from PyQt6 import QtWidgets,QtGui,QtCore
@@ -99,7 +100,7 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
                 # 提交各设备进行波形数据的反序列化
                 dataStrList = deviceStrDict.get(device.deviceName)
                 device.DeviceDeserialization(dataStrList)
-                self.RefreshUI()
+            self.RefreshUI()
             return
 
     def SaveFileAction(self):
@@ -162,7 +163,11 @@ class ControlFrontEnd(PyQt6.QtWidgets.QMainWindow):
 
 # program entrance
 if __name__ == '__main__':
+    # profile.enable()
     app = PyQt6.QtWidgets.QApplication(sys.argv)
     panel = ControlFrontEnd()
     panel.show()
-    sys.exit(app.exec())
+    exitValue = app.exec()
+    # profile.disable()
+    # profile.print_stats()
+    sys.exit(exitValue)

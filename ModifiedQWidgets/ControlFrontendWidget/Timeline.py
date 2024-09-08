@@ -44,14 +44,17 @@ class WaveBlock:
         :param length: 时间长度
         :return:
         '''
+        # 控件伸缩规则 纵向宽度可延伸 横向长度固定
         policyControl = QtWidgets.QSizePolicy.Policy
-        self.timeScale = length
-        selfTimescale = length
         self._blockLabel.setSizePolicy(policyControl.Fixed, policyControl.Expanding)
+        # 时间条控件尺寸获取
         widgetSize: QtCore.QSize = self.timeLine.scrollArea.size()
+        # 计算新的长度
         fullWidth = widgetSize.width()
+        selfTimescale = length
         fullTimeScale = self.timeLine.GetTimescale()
         selfWidth = selfTimescale / fullTimeScale * fullWidth
+        # 应用到当前label
         label: ModifiedLabels.SelectableLabel = self._blockLabel
         label.setFixedWidth(int(selfWidth))
 
@@ -88,6 +91,8 @@ class WaveBlock:
         self.ResizeLength(self.waveData.duration)
         return self._blockLabel
 
+    __slots__ = ('waveData','title','duration','detail','_blockLabel','timeLine')
+
     def __init__(self, waveData: DataManager.WaveData, timeline):
         '''
         以Label形式显示一段信号
@@ -96,7 +101,7 @@ class WaveBlock:
         self.waveData = waveData
         self.title = waveData.title
         self.duration = str(waveData.duration)
-        self.detail = str(waveData.parameter)
+        self.detail = str(waveData.type.value[0])
         self._blockLabel: (ModifiedLabels.SelectableLabel or None) = None
         self.timeLine = timeline
 
