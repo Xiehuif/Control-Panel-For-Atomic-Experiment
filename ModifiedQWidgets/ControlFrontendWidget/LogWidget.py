@@ -58,7 +58,8 @@ class BrowserController:
             infoExplaination.update({infoType: infoType.value})
         checkWidget = CheckSelectionWidget.CheckWidget(infoExplaination, '请选择提示内容', self._browser)
         infoSetting = checkWidget.ShowItemCheckDialog()
-        self._transparency = infoSetting
+        if infoSetting is not None:
+            self._transparency = infoSetting
         self.RefreshLogDisplay()
 
     def SetTransparency(self, infoType: InfoType, isVisible: bool):

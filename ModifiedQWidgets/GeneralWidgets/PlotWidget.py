@@ -49,7 +49,6 @@ class FunctionPlotBuffer:
                 return block
         return None
 
-
     def CheckValueDefinitionDomainByValue(self,xValue:float) -> dict|None:
         """
         用于检查特定值是否存在定义

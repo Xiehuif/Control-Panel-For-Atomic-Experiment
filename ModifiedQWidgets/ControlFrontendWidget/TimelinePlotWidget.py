@@ -118,12 +118,3 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
 
     def ReplotDevicesAsynchronously(self):
         self.plotThread.start(QThread.Priority.LowestPriority)
-
-
-
-
-
-
-
-
-
