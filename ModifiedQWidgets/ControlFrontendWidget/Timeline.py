@@ -1,4 +1,6 @@
 from PyQt6 import QtCore, QtWidgets
+
+import LogManager
 import ModifiedLabels
 import MultiselectionManager
 from QSSConstant import QSSPresetting
@@ -38,10 +40,11 @@ class WaveBlock:
                                      args=self._GetChangeState)
 
     # public methods
-    def ResizeLength(self, length: float):
+    def ResizeLength(self, length: float,minimunSizeRatio: float = 0.1):
         '''
         重新定义这个Label的长度
         :param length: 时间长度
+        :param minimunSizeRatio: 每一个时间块所占最小比例
         :return:
         '''
         # 控件伸缩规则 纵向宽度可延伸 横向长度固定
@@ -49,11 +52,16 @@ class WaveBlock:
         self._blockLabel.setSizePolicy(policyControl.Fixed, policyControl.Expanding)
         # 时间条控件尺寸获取
         widgetSize: QtCore.QSize = self.timeLine.scrollArea.size()
-        # 计算新的长度
+        # 计算所需长度比例
         fullWidth = widgetSize.width()
         selfTimescale = length
         fullTimeScale = self.timeLine.GetTimescale()
-        selfWidth = selfTimescale / fullTimeScale * fullWidth
+        sizeRatio = selfTimescale / fullTimeScale
+        # 检查是否符合最小比例要求
+        if minimunSizeRatio > sizeRatio:
+            sizeRatio = minimunSizeRatio
+        # 计算像素级别尺寸
+        selfWidth = sizeRatio * fullWidth
         # 应用到当前label
         label: ModifiedLabels.SelectableLabel = self._blockLabel
         label.setFixedWidth(int(selfWidth))
@@ -82,25 +90,25 @@ class WaveBlock:
                                                           self.waveData)
         self._blockLabel.SetSelectState(state)
         #应用文字描述
-        self._ApplyText(self._blockLabel, self.title, self.duration, self.detail)
+        self._ApplyText(self._blockLabel, self.title, str(self.duration), self.detail)
         #应用样式表
         self._ApplyQSS(self._blockLabel)
         #应用事件
         self._ApplyEvent(self._blockLabel)
         #应用大小
-        self.ResizeLength(self.waveData.duration)
+        self.ResizeLength(self.duration)
         return self._blockLabel
 
-    __slots__ = ('waveData','title','duration','detail','_blockLabel','timeLine')
+    __slots__ = ('waveData','title','detail','duration','_blockLabel','timeLine')
 
-    def __init__(self, waveData: DataManager.WaveData, timeline):
+    def __init__(self, waveData: DataManager.WaveData, timeline, duration):
         '''
         以Label形式显示一段信号
         :param waveData: 被显示的信号输出模块
         '''
         self.waveData = waveData
         self.title = waveData.title
-        self.duration = str(waveData.duration)
+        self.duration = duration
         self.detail = str(waveData.type.value[0])
         self._blockLabel: (ModifiedLabels.SelectableLabel or None) = None
         self.timeLine = timeline
@@ -130,7 +138,7 @@ class TimelinesController:
         self.selectionManager.Clear()
 
     def _LoadWaveIntoLayout(self, waveData: DataManager.WaveData):
-        waveBlock = WaveBlock(waveData,self)
+        waveBlock = WaveBlock(waveData,self,self.deviceSelector.GetCurrentDevice().GetDuration(waveData))
         self.blockList.append(waveBlock)
         targetLabel = waveBlock.GenerateLabel()
         self.layout.addWidget(targetLabel)
@@ -165,10 +173,10 @@ class TimelinesController:
         self.blockList = []
         length = len(self._scheduleData)
         # 添加Label
-        print('Timeline Refresh its display：\n'
+        LogManager.Log('Timeline Refresh its display：\n'
               'Detected Block Number：' + str(length))
         if length == 0:
-            print('Timeline null')
+            LogManager.Log('Timeline null')
             return
         for i in range(0,length):
             self._LoadWaveIntoLayout(self._scheduleData[i])

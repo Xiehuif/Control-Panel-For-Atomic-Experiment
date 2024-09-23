@@ -1,35 +1,42 @@
-import Serialize
+import json
+
+import LogManager
+import SerializationManager
 import enum
 import copy
+import cv2
 
-class WaveData(Serialize.Serializable):
-    __slots__ = ('duration', 'type', 'parameter', 'title')
+class WaveData(SerializationManager.Serializable):
+    __slots__ = ('type', 'parameter', 'title')
     def CopyFrom(self,waveData):
-        self.duration = copy.deepcopy(waveData.duration)
         self.type = copy.deepcopy(waveData.type)
         self.parameter = copy.deepcopy(waveData.parameter)
         self.title = copy.deepcopy(waveData.title)
 
     def __init__(self,*args):
         # duration:float,type,parameter,title='default'
-        if len(args) == 0:
-            self.duration = None
+        '''
+        初始化一个WaveData
+        :param args: 若只有一项，则默认为Serialize产生的JSON字符串；如果有三项，按顺序为 类型；参数；标题
+        '''
+        if len(args) == 3:
+            self.type = args[0]
+            self.parameter = args[1]
+            self.title = args[2]
+        elif len(args) == 1:
+            jsonString = args[0]
+            self.Deserialize(jsonString)
+        else:
             self.type = None
             self.parameter = None
             self.title = None
-        if len(args) == 4:
-            self.duration = args[0]
-            self.type = args[1]
-            self.parameter = args[2]
-            self.title = args[3]
-        if len(args) == 1:
-            jsonString = args[0]
-            self.Deserialize(jsonString)
-
-class DeviceSchedule:
+            super().__init__()
+            
+class DeviceSchedule(SerializationManager.Serializable):
     def __init__(self,device):
         self._device = device
         self.scheduleData: list[WaveData] = []
+        super().__init__()
 
     def Reset(self):
         self.scheduleData: list[WaveData] = []
@@ -43,34 +50,12 @@ class DeviceSchedule:
     def GetAttachedDevice(self):
         return self._device
 
-    def ScheduleSerialization(self) -> list|None:
-        length = len(self.scheduleData)
-        if length == 0:
-            print('null schedule:' + self._device.deviceName)
-            return None
-        else:
-            dataList = []
-            for i in range(0,length):
-                dataStr = self.scheduleData[i].Serialize()
-                dataList.append(dataStr)
-            return dataList
-
-    def ScheduleDeserialization(self,dataStrList:list):
-        if dataStrList is None:
-            self.Reset()
-            return
-        size = len(dataStrList)
-        self.scheduleData: list[WaveData] = []
-        for i in range(0,size):
-            waveData = WaveData(dataStrList[i])
-            self.AddWave(waveData)
-
-
-class Device:
+class Device(SerializationManager.Serializable):
     def __init__(self,deviceName:str,deviceOutputMode):
         self.deviceName = deviceName
         self.deviceOutputMode = deviceOutputMode
         self.deviceSchedule = DeviceSchedule(self)
+        super().__init__()
 
     def GetPlotMethod(self,waveData:WaveData):
         """
@@ -81,12 +66,15 @@ class Device:
         return lambda: 0
 
     def GetDuration(self,waveData:WaveData) -> float:
+        LogManager.Log('Get Duration ERR:Can\'t find duration \n type is ' + str(waveData.type) + ' \n par : \n' +
+              str(waveData.parameter), LogManager.LogType.Error)
         """
-        此方法由不同的Device进行重载从而预估不同的Device输出不同波形时所需要的时间
+        此方法由不同的Device进行重载从而为不同的Device输出不同波形时所需要的时间
+        必须重载
         :param waveData: 被评估的波形
         :return: 所用时长
         """
-        return 0
+        return 10.0
 
     def GetOutputModes(self) -> dict:
         outputModes = {}
@@ -96,19 +84,23 @@ class Device:
             outputModes.update({outputName: outputModeDataEnum})
         return outputModes
 
-    def DeviceSerialization(self) -> dict:
-        scheduleStrList = self.deviceSchedule.ScheduleSerialization()
-        targetDict = {}
-        targetDict.update({self.deviceName: scheduleStrList})
-        return targetDict
+    def Serialize(self,encoder: json.JSONEncoder|None = None) -> str:
+        return self.deviceSchedule.Serialize(encoder)
 
-    def DeviceDeserialization(self,dataStrList:list):
-        self.deviceSchedule.ScheduleDeserialization(dataStrList)
+    def Deserialize(self,jsonContext :str|None):
+        self.deviceSchedule.Deserialize(jsonContext)
         return
 
-    def RunDevice(self):
+    def DeviceAwake(self):
         '''
-        设备运行入口
+        设备唤醒
+        :return:
+        '''
+        return
+
+    def DeviceRun(self):
+        '''
+        设备运行
         :return:
         '''
         return

@@ -1,6 +1,7 @@
 import enum
 import json
 import sys
+import LogManager
 
 
 class Serializable:
@@ -13,10 +14,10 @@ class Serializable:
         dataDict = json.loads(jsonContext)
         print(dataDict)
         for varName in dataDict:
-            self.__setattr__(varName,self.FromStringListToVarible(dataDict.get(varName)))
+            self.__setattr__(varName, self.FromStringListToVarible(dataDict.get(varName)))
         return
 
-    def ConvertObjectToVaribleStringList(self,var) -> list[str]|None:
+    def ConvertObjectToVaribleStringList(self, var) -> list[str]|None:
         """
         通过重写该函数为更多类型提供序列化能力，返回的列表应有两个对象，第一个对象是仅含有一个字符串类型参数的，作为var类型的实例化函数名称
         然后另一个对象是实例化所需的字符串参数
@@ -40,9 +41,9 @@ class Serializable:
     @staticmethod
     def FromStringListToBuiltinIterable(argObj:list):
         res = []
-        load:list = argObj
-        sizeNum = len(load)
-        for i in range(0,sizeNum):
+        load: list = argObj
+        size = len(load)
+        for i in range(0,size):
             obj = Serializable.FromStringListToVarible(load[i])
             res.append(obj)
         return res
@@ -64,7 +65,7 @@ class Serializable:
         res = {}
         load:list = argObj
         if len(load) % 2 != 0:
-            print('Deserialization : DATA ERROR -- size of list  % 2 is not 0')
+            LogManager.Log('Deserialization : DATA ERROR -- size of list  % 2 is not 0', LogManager.LogType.Error)
         size = int(len(load) / 2)
         for i in range(0,size):
             keyIndex = 2 * i
@@ -120,17 +121,15 @@ class Serializable:
             return varList
         customVarList = Serializable.ConvertObjectToVaribleStringList(var)
         if customVarList is None:
-            print('Serializable : can\'t convert ' + type(var).__name__)
+            LogManager.Log('Serializable : can\'t convert ' + type(var).__name__, LogManager.LogType.Error)
             return ['None']
         if isinstance(customVarList,list) and len(customVarList) == 2:
             varList.append(customVarList[0])
             varList.append(customVarList[1])
         else:
-            print('Serializable : can\'t convert ' + type(var).__name__)
-            print('varible name:' + var.__name__)
+            LogManager.Log('Unsupported conversion format--length of convert list is not 2: ' + type(var).__name__,
+                           LogManager.LogType.Error)
             return ['None']
-
-
 
     def Serialize(self,encoder:json.JSONEncoder = json.JSONEncoder()) -> str:
         varList = self.GetVaribleName()

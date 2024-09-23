@@ -2,6 +2,8 @@
 import numpy as np
 import DataManager
 from enum import Enum
+
+import LogManager
 from DataManager import WaveData
 
 # 定义不同输出类型波形所需各项数据，注意格式: 数据集合 = ['数据名称',数据类型]
@@ -9,13 +11,15 @@ class SineOutputData(Enum):
     Period = ['周期',float]
     Phase = ['初始相位',float]
     Amplitude = ['振幅',float]
+    PeriodNumber = ['周期数',int]
 
 class SquareOutputData(Enum):
     Period = ['周期', float]
-    InitialTime = ['初始时间', float]
+    InitialTime = ['初始所在时间', float]
     DutyCycle = ['占空比', float]
     HigherPeak = ['最大值', float]
     LowerPeak = ['最小值',float]
+    PeriodNumber = ['周期数',int]
 
 # 将定义好的数据注册到一个Enum表内，每一行都是一个输出类型，注意格式： 输出 = ['输出名称',数据集合]
 class DemoOutput(Enum):
@@ -24,8 +28,13 @@ class DemoOutput(Enum):
 
 # 新建设备类
 class DemoDevice(DataManager.Device):
+    """
+    这仅仅是一个用于演示的设备类型
+    """
 
-    # 初始化设备，注意参数格式
+    '''
+    初始化设备，注意参数格式
+    '''
 
     def __init__(self):
         # 第一个参数是设备显示及索引的名称，注意设备的类名可以重复，但是这一显示及索引的名称在所有存在的设备里必须是唯一的
@@ -33,10 +42,12 @@ class DemoDevice(DataManager.Device):
         # 第二个参数是上面先定义好的参数表
         super().__init__('demo',DemoOutput)
 
-    # 这个函数定义了波形图如何绘制，针对不同类型的波形需要返回一个绘制函数
-    # 对于一个波形而言，他的最左端自变量为0
-    # 最右端自变量等于其 duration （持续时间）
-    # 经由这个关系，返回给出0 - duration期间内波型对每一个t对应的函数值的函数
+    '''
+    这个函数定义了波形图如何绘制，针对不同类型的波形需要返回一个绘制函数
+    对于一个波形而言，他的最左端自变量为0
+    最右端自变量等于其 duration （持续时间）
+    经由这个关系，返回给出0 - duration期间内波型对每一个t对应的函数值的函数
+    '''
 
     def GetPlotMethod(self,waveData:WaveData):
         type = waveData.type
@@ -63,6 +74,33 @@ class DemoDevice(DataManager.Device):
             return higherPeak
         else:
             return lowerPeak
+
+    '''
+    计算不同类型占用时间
+    '''
+
+    def GetDuration(self,waveData:WaveData) -> float:
+        parameter: dict = waveData.parameter
+        duration: float = 10.0
+        if waveData.type == DemoOutput.Sine:
+            duration = (parameter.get(DemoOutput.Sine.value[1].PeriodNumber) *
+                        parameter.get(DemoOutput.Sine.value[1].Period))
+        elif waveData.type == DemoOutput.Square:
+            duration = (parameter.get(DemoOutput.Square.value[1].PeriodNumber) *
+                        parameter.get(DemoOutput.Square.value[1].Period))
+        else:
+            return super().GetDuration(waveData)
+        return duration
+
+    '''
+    唤醒设备，并运行，在运行执行前，所有唤醒操作都已结束；
+    '''
+    def DeviceAwake(self):
+        LogManager.Log('设备已唤醒...' + self.deviceName)
+
+    def DeviceRun(self):
+        LogManager.Log('设备正运行...' + self.deviceName)
+
 
 # 注册设备
 DataManager.deviceHandlerInstance.RegisterDevice(DemoDevice())

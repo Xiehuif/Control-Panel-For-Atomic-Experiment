@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import QWidget
 import EventHandler
 import enum
 from MultiselectionManager import SelectionManager
-
+import LogManager
 class InteractableLabel(QtWidgets.QLabel):
     """
     为QT的Label控件提供响应其他事件的操作
@@ -11,7 +11,7 @@ class InteractableLabel(QtWidgets.QLabel):
     eventHandler: (EventHandler or None) = None
     def __init__(self,parent : QWidget):
         super().__init__(parent)
-        print('Handler Online')
+        LogManager.Log('Handler Online', LogManager.LogType.Runtime)
         self.setMouseTracking(True)
         self.eventHandler = EventHandler.EventHandlerObject()
         self.installEventFilter(self.eventHandler)

@@ -10,7 +10,6 @@ class ParameterWidgetHandler:
 
     def __init__(self, parentController, dataEnum, waveData: DataManager.WaveData, checkCallback):
         self.titleItem = self.StaticClarification.titleClarification
-        self.durationItem = self.StaticClarification.durationClarification
         self.controller = parentController
 
         self.waveData = waveData
@@ -27,7 +26,6 @@ class ParameterWidgetHandler:
     def GetDataClarifications(self) -> list:
         dataEnum = self.waveData.type
         dataClarifications = []
-        dataClarifications.append(self.durationItem)
         dataClarifications.append(self.titleItem)
         for clarificationName,clarification in dataEnum.value[1].__members__.items():
             dataClarifications.append(clarification)
@@ -58,15 +56,6 @@ class ParameterWidgetHandler:
             # 处理标题 和 时长
             if self.collector[target] == self.StaticClarification.titleClarification:
                 self.waveData.title = content
-            elif self.collector[target] == self.StaticClarification.durationClarification:
-                try:
-                    duration = float(content)
-                except ValueError:
-                    result = self._ParameterConvertErrorDialog(self.collector[target].value[0], content, str(type),
-                                                               closeButton)
-                    if result == closeButton:
-                        return
-                self.waveData.duration = duration
             else:
                 # 处理一般参数
                 type = self.collector[target].value[1]
@@ -108,8 +97,6 @@ class ParameterWidgetHandler:
         # 读入已有的数据
         if clarification == self.StaticClarification.titleClarification and self.waveData.title is not None:
             editLine.setText(self.waveData.title)
-        elif clarification == self.StaticClarification.durationClarification and self.waveData.title is not None:
-            editLine.setText(str(self.waveData.duration))
         elif self.waveData.parameter is not None:
             editLine.setText(str(self.waveData.parameter.get(clarification)))
         return itemLayout
@@ -124,8 +111,7 @@ class SelectorController:
         self.deviceQList.currentRowChanged.connect(self._LoadWaveList)
         self.parameterPanel = None
 
-
-    def GetCurrentDevice(self) -> DataManager.Device:
+    def GetCurrentDevice(self) -> DataManager.Device | None:
         currentItem = self.deviceQList.currentItem()
         if currentItem is None:
             currentItem = self.deviceQList.item(0)

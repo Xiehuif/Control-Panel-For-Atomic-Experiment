@@ -10,11 +10,13 @@ from matplotlib.backends.backend_qtcairo import FigureCanvasQTCairo as FigureCan
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.legend_handler import HandlerTuple
 import cProfile
+import LogManager
 
 matplotlib.rcParams['font.family'] = 'SimHei'  # 或其他支持中文的字体
 matplotlib.rcParams['axes.unicode_minus'] = False  # 解决负号'-'显示为方块的问题
 matplotlib.use('qtcairo')
-print(matplotlib.get_backend())
+LogManager.Log(matplotlib.get_backend())
+
 
 class FunctionPlotBuffer:
     """
@@ -37,7 +39,7 @@ class FunctionPlotBuffer:
         :return: 若无定义返回None，否则返回定义所碰撞的块
         """
         if lowerXValue >= higherXValue:
-            print('Invalid')
+            LogManager.Log('Invalid X value: lower x gt. higher x', LogManager.LogType.Error)
             return None
         for i in self.bufferList:
             block:dict = i
@@ -148,7 +150,7 @@ class PlotWidgetController:
 
     def _RegisterGroup(self,line:matplotlib.lines.Line2D,groupName:str):
         if groupName not in self.groupDict:
-            self.groupDict.update({groupName:[]})
+            self.groupDict.update({groupName: []})
         self.groupDict.get(groupName).append(line)
 
     def _GetRandomUnoccupiedColor(self) -> str:

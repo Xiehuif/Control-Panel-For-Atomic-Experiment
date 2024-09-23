@@ -6,6 +6,8 @@ import PlotWidget
 import Timeline
 import DataManager
 import cProfile
+
+
 class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
 
     def __init__(self,timelinePlotWidget:QtWidgets.QWidget,timeline:Timeline.TimelinesController):
@@ -23,6 +25,7 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
         deviceScheduleData: list[DataManager.WaveData] = device.deviceSchedule.scheduleData
         length = len(deviceScheduleData)
         timeRecord = 0.0
+        waveDuration = 0.0
         cycleCondition = True
         if device == selectedDevice:
             # 分类 区分高亮和普通
@@ -32,26 +35,28 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
             bufferDict.update({device.deviceName:normalBuffer})
             for i in range(0,length):
                 targetData: DataManager.WaveData = deviceScheduleData[i]
+                waveDuration = device.GetDuration(targetData)
                 func = device.GetPlotMethod(targetData)
                 isSelected = False
                 for label in selectedLabel:
                     isSelected = (label.attachedObject == targetData)
                 if isSelected:
-                    highlightBuffer.AddBufferBlock(func, timeRecord, timeRecord + targetData.duration)
+                    highlightBuffer.AddBufferBlock(func, timeRecord, timeRecord + waveDuration)
                 else:
-                    normalBuffer.AddBufferBlock(func, timeRecord, timeRecord + targetData.duration)
-                timeRecord = timeRecord + targetData.duration
+                    normalBuffer.AddBufferBlock(func, timeRecord, timeRecord + waveDuration)
+                timeRecord = timeRecord + waveDuration
         else:
             buffer = PlotWidget.FunctionPlotBuffer()
             bufferDict.update({device.deviceName:buffer})
             for i in range(0, length):
                 targetData : DataManager.WaveData = deviceScheduleData[i]
+                waveDuration = device.GetDuration(targetData)
                 func = device.GetPlotMethod(targetData)
-                buffer.AddBufferBlock(func,timeRecord,timeRecord + targetData.duration)
-                timeRecord = timeRecord + targetData.duration
+                buffer.AddBufferBlock(func,timeRecord,timeRecord + waveDuration)
+                timeRecord = timeRecord + waveDuration
 
     def _PlotWaveData(self,startXValue:float,waveData:DataManager.WaveData,device:DataManager.Device,colorGroupName = None,breakPointGroupName = None):
-        endXValue:float = startXValue + waveData.duration
+        endXValue:float = startXValue + device.GetDuration(waveData)
         plotMethod = device.GetPlotMethod(waveData)
         func = lambda x : plotMethod(x - startXValue)
         if colorGroupName == None:
@@ -61,7 +66,6 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
         self.PlotFunction(func,startXValue,endXValue,label=colorGroupName,breakPointGroupName=breakPointGroupName)
 
     def _PlotDevice(self,device:DataManager.Device):
-
         # 数据初始化
         time:float = 0
         currentDeviceName = self.timeline.deviceSelector.GetCurrentDevice()
@@ -86,7 +90,7 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
                     self._PlotWaveData(time, waveData, device)
             else:
                 self._PlotWaveData(time,waveData,device)
-            time = time + waveData.duration
+            time = time + device.GetDuration(waveData)
 
     def RefreshBufferDict(self):
         self.bufferDict = {}
