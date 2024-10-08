@@ -94,18 +94,18 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
 
     def RefreshBufferDict(self):
         self.bufferDict = {}
-        for device in self.deviceHandler.GetDevices():
+        for device in self.deviceHandler.GetObjects():
             self._AddDeviceBuffer(device,self.bufferDict)
 
     def ReplotDevicesSynchronously(self):
         print('Timeline plot redraw')
         self.ClearPlot()
-        for device in self.deviceHandler.GetDevices():
+        for device in self.deviceHandler.GetObjects():
             self._PlotDevice(device)
         self.DrawPlot()
 
     class PlotThread(QThread):
-        def __init__(self,controller):
+        def __init__(self, controller):
             self.controller = controller
             super().__init__()
             self.qmut = QMutex()

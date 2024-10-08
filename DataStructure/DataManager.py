@@ -1,57 +1,86 @@
 import json
 
+from abc import abstractmethod,ABC
+
 import LogManager
 import SerializationManager
 import enum
 import copy
-import cv2
+
 
 class WaveData(SerializationManager.Serializable):
     __slots__ = ('type', 'parameter', 'title')
-    def CopyFrom(self,waveData):
+
+    def CopyFrom(self, waveData):
         self.type = copy.deepcopy(waveData.type)
         self.parameter = copy.deepcopy(waveData.parameter)
         self.title = copy.deepcopy(waveData.title)
 
     def __init__(self,*args):
-        # duration:float,type,parameter,title='default'
+        # duration:float, type,parameter,title='default'
         '''
         初始化一个WaveData
         :param args: 若只有一项，则默认为Serialize产生的JSON字符串；如果有三项，按顺序为 类型；参数；标题
         '''
         if len(args) == 3:
             self.type = args[0]
-            self.parameter = args[1]
-            self.title = args[2]
+            self.parameter: dict[enum.Enum] | None = args[1]
+            self.title: str | None = args[2]
         elif len(args) == 1:
             jsonString = args[0]
             self.Deserialize(jsonString)
         else:
             self.type = None
-            self.parameter = None
-            self.title = None
+            self.parameter: dict[enum.Enum] | None = None
+            self.title: str | None = None
             super().__init__()
-            
+
+
 class DeviceSchedule(SerializationManager.Serializable):
-    def __init__(self,device):
+
+    def __init__(self, device):
         self._device = device
         self.scheduleData: list[WaveData] = []
+        self.IDDistributor: int = 0
         super().__init__()
+
+    def GetWaveByIndex(self, index: int) -> WaveData | None:
+        if index < 0 | index >= len(self.scheduleData):
+            LogManager.Log("Request a list beyond its bound.", LogManager.LogType.Error)
+            return None
+        return self.scheduleData[index]
+
+    def GetIndexOfWave(self, waveData: WaveData) -> int:
+        try:
+            return self.scheduleData.index(waveData)
+        except Exception as e:
+            LogManager.Log("Raise: {} when try to get WaveData index".format(e), LogManager.LogType.Error)
+            return -1
 
     def Reset(self):
         self.scheduleData: list[WaveData] = []
 
-    def AddWave(self,wave:WaveData):
+    def AddWave(self, wave: WaveData):
         self.scheduleData.append(wave)
 
-    def DeleteWave(self,wave:WaveData):
+    def DeleteWave(self, wave: WaveData):
         return self.scheduleData.remove(wave)
 
     def GetAttachedDevice(self):
         return self._device
 
+    def CopyFromSchedule(self, deviceSchedule):
+        self._device = deviceSchedule.GetAttachedDevice()
+        self.scheduleData.clear()
+        for index in range(0, len(deviceSchedule.scheduleData)):
+            newWaveData = WaveData()
+            newWaveData.CopyFrom(deviceSchedule.scheduleData[index])
+            self.scheduleData.append(newWaveData)
+
+
 class Device(SerializationManager.Serializable):
-    def __init__(self,deviceName:str,deviceOutputMode):
+
+    def __init__(self, deviceName:str, deviceOutputMode):
         self.deviceName = deviceName
         self.deviceOutputMode = deviceOutputMode
         self.deviceSchedule = DeviceSchedule(self)
@@ -65,7 +94,7 @@ class Device(SerializationManager.Serializable):
         """
         return lambda: 0
 
-    def GetDuration(self,waveData:WaveData) -> float:
+    def GetDuration(self, waveData:WaveData) -> float:
         LogManager.Log('Get Duration ERR:Can\'t find duration \n type is ' + str(waveData.type) + ' \n par : \n' +
               str(waveData.parameter), LogManager.LogType.Error)
         """
@@ -84,10 +113,10 @@ class Device(SerializationManager.Serializable):
             outputModes.update({outputName: outputModeDataEnum})
         return outputModes
 
-    def Serialize(self,encoder: json.JSONEncoder|None = None) -> str:
+    def Serialize(self, encoder: json.JSONEncoder | None = None) -> str:
         return self.deviceSchedule.Serialize(encoder)
 
-    def Deserialize(self,jsonContext :str|None):
+    def Deserialize(self, jsonContext: str | None):
         self.deviceSchedule.Deserialize(jsonContext)
         return
 
@@ -106,30 +135,22 @@ class Device(SerializationManager.Serializable):
         return
 
 
-class DeviceHandler:
+class ObjectHandler:
+
     def __init__(self):
         self._devices = {}
 
-    def GetDeviceNames(self) -> list[str]:
-        names:[str] = []
-        for deviceName in self._devices:
-            names.append(deviceName)
-        return names
+    def GetObjectNames(self) -> list[str]:
+        return list(self._devices.keys())
 
-    def RegisterDevice(self,device:Device):
-        self._devices.update({device.deviceName:device})
+    def RegisterObject(self, device: Device):
+        self._devices.update({device.deviceName: device})
 
-    def GetDevices(self) -> list[Device]:
-        deviceList:[Device] = []
-        for deviceName in self._devices:
-            deviceList.append(self._devices[deviceName])
-        return deviceList
+    def GetObjects(self) -> list[Device]:
+        return list(self._devices.values())
 
-    def GetDevice(self,deviceName:str):
-        for existedDeviceName in self._devices:
-            if existedDeviceName == deviceName:
-                return self._devices.get(deviceName)
-        return None
+    def GetObject(self, deviceName: str):
+        return self._devices.get(deviceName)
 
 
-deviceHandlerInstance = DeviceHandler()
+deviceHandlerInstance = ObjectHandler()

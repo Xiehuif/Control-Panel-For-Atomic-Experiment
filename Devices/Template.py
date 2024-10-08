@@ -103,6 +103,6 @@ class DemoDevice(DataManager.Device):
 
 
 # 注册设备
-DataManager.deviceHandlerInstance.RegisterDevice(DemoDevice())
+DataManager.deviceHandlerInstance.RegisterObject(DemoDevice())
 
 # 在DevicesImport中Import该文件以使该设备生效

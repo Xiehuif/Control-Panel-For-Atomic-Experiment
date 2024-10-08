@@ -4,6 +4,7 @@ from artiq.experiment import *
 
 import DataManager
 import DeviceSelector
+import LogManager
 import ModifiedLabels
 import MultiselectionManager
 import Timeline
@@ -76,9 +77,9 @@ class ButtonBehavior:
 
     @staticmethod
     def InitiateDevice():
-        for device in DataManager.deviceHandlerInstance.GetDevices():
+        for device in DataManager.deviceHandlerInstance.GetObjects():
             device.DeviceAwake()
-        for device in DataManager.deviceHandlerInstance.GetDevices():
+        for device in DataManager.deviceHandlerInstance.GetObjects():
             device.DeviceRun()
 
     @staticmethod
@@ -94,5 +95,12 @@ class ButtonBehavior:
         selector.ShowParameterPanel(newWaveData, lambda :selectedWaveData.CopyFrom(newWaveData))
         refreshCallback()
 
+    @staticmethod
+    def ShowPanel(panel: QtWidgets.QWidget):
+        if panel.isVisible():
+            LogManager.Log("Panel has already been opened", LogManager.LogType.Runtime)
+            return
+        else:
+            panel.show()
 
 

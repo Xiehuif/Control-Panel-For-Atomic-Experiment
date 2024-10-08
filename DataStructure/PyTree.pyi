@@ -1,0 +1,63 @@
+from typing import overload
+
+import SerializationManager
+
+
+class TreeNode(SerializationManager.Serializable):
+
+    @overload
+    def __init__(self, tree: Tree, parent: TreeNode | None = None):
+        self._tree: Tree = None
+        self._parent: TreeNode | None = None
+        self._children: list[TreeNode] = None
+        self._data = None
+        self._index: int | None = None
+
+    def SetData(self, data: SerializationManager.Serializable | None): ...
+
+    def GetData(self) -> SerializationManager.Serializable | None: ...
+
+    def GetChildren(self) -> list[TreeNode]: ...
+
+    def GetParent(self) -> TreeNode | None: ...
+
+    def SetParent(self, parent: TreeNode | None): ...
+
+    def DeleteChild(self, child: TreeNode): ...
+
+    def Deserialize(self, jsonContext: str): ...
+
+    def GetIndex(self) -> int: ...
+
+    def GetDepth(self) -> int: ...
+
+    def GetHandler(self) -> str: ...
+    # return "parent index - self index"
+
+    def GetTree(self) -> Tree: ...
+
+
+class Tree(SerializationManager.Serializable):
+
+    @overload
+    def __init__(self, jsonContext: str | None = None):
+        self._assignedIndex: int = None
+        self._root: TreeNode = None
+
+    def GetRoot(self): ...
+
+    def _SearchDataKernel(self, targetData, targetNode: TreeNode): ...
+
+    def _SearchIndexKernel(self, targetIndex: int, targetNode: TreeNode): ...
+
+    def _CollectNodes(self, nodeList: list[TreeNode], targetNode: TreeNode): ...
+
+    def GetNodeByData(self, data: SerializationManager.Serializable) -> TreeNode | None: ...
+
+    def GetNodeByIndex(self, index: int) -> TreeNode | None: ...
+
+    def AssignIndex(self) -> int: ...
+
+    def GetNodes(self) -> list[TreeNode]: ...
+
+

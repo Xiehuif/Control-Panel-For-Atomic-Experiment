@@ -218,12 +218,12 @@
       <item>
        <layout class="QHBoxLayout" name="ExecuteInteractionLayout">
         <item>
-         <widget class="QPushButton" name="ExecuteOperationBtn">
+         <widget class="QPushButton" name="SchedulerPanelBtn">
           <property name="enabled">
            <bool>true</bool>
           </property>
           <property name="text">
-           <string>执行</string>
+           <string>打开计划面板</string>
           </property>
          </widget>
         </item>
@@ -269,19 +269,32 @@
     <property name="title">
      <string>文件</string>
     </property>
-    <addaction name="Save"/>
-    <addaction name="Open"/>
+    <addaction name="WaveFileSave"/>
+    <addaction name="WaveFileOpen"/>
+    <addaction name="separator"/>
+    <addaction name="LogFileSave"/>
+    <addaction name="LogFileOpen"/>
    </widget>
    <addaction name="FileMenu"/>
   </widget>
-  <action name="Save">
+  <action name="WaveFileSave">
    <property name="text">
-    <string>保存</string>
+    <string>保存波形</string>
    </property>
   </action>
-  <action name="Open">
+  <action name="WaveFileOpen">
    <property name="text">
-    <string>打开</string>
+    <string>打开波形</string>
+   </property>
+  </action>
+  <action name="LogFileSave">
+   <property name="text">
+    <string>保存日志</string>
+   </property>
+  </action>
+  <action name="LogFileOpen">
+   <property name="text">
+    <string>打开日志</string>
    </property>
   </action>
  </widget>

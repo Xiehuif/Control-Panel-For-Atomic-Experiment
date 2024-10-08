@@ -1,11 +1,15 @@
 from PyQt6 import QtGui,QtCore,QtWidgets
 from PyQt6.QtWidgets import QWidget,QApplication
 import enum
+
+
 class EventHandlerObject(QtCore.QObject):
+
     _delegates : dict = None
     _parameters : dict = None
     _infos : dict = None
     _infoActivation = False
+
     def __init__(self):
         self._delegates = {}
         self._parameters = {}

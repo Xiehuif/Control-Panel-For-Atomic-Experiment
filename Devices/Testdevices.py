@@ -64,4 +64,4 @@ class test(DataManager.Device):
     def DeviceRun(self):
         LogManager.Log('设备正运行...' + self.deviceName)
 
-DataManager.deviceHandlerInstance.RegisterDevice(test())
+DataManager.deviceHandlerInstance.RegisterObject(test())

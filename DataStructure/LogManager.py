@@ -13,13 +13,15 @@ class LogType(Enum):
 class LogRecord(SerializationManager.Serializable):
 
     _timeFormat = '%Y-%m-%d %H:%M:%S'
-    def __init__(self):
+    def __init__(self, jsonContext = None):
         self.initiatingObjectFile = []
         self.initiatingObjectFunctionName: str = 'null function'
         self.info: str = 'null str'
         self.type: LogType = LogType.Any
         self.logTime: str = datetime.datetime.now().strftime(self._timeFormat)
         super().__init__()
+        if jsonContext is not None:
+            self.Deserialize(jsonContext)
 
     def SetTime(self,dateTime:datetime.datetime):
         self.logTime = dateTime.strftime(self._timeFormat)

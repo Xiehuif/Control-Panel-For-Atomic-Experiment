@@ -5,12 +5,15 @@
       <sourceFolder url="file://$MODULE_DIR$/DataStructure" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/ModifiedQWidgets" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/Devices" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/ModifiedQWidgets/ControlFrontendWidget" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/ModifiedQWidgets/GeneralWidgets" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/CameraFrontend" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/ThirdParty" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/ThirdParty/DCAM" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/WaveFrontend" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/DataStructure/UserEditable" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ModifiedQWidgets/ExperimentSchedulerWidgets" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ModifiedQWidgets/WaveFrontendWidgets" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/SchedulerFrontend" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.11 (2)" jdkType="Python SDK" />

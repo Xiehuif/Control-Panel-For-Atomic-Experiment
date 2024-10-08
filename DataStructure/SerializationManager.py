@@ -6,7 +6,8 @@ import LogManager
 
 class Serializable:
     def __init__(self,jsonContext: str|None = None):
-        self.Deserialize(jsonContext)
+        if jsonContext is not None:
+            self.Deserialize(jsonContext)
 
     def Deserialize(self, jsonContext :str|None):
         if jsonContext is None:
@@ -17,7 +18,7 @@ class Serializable:
             self.__setattr__(varName, self.FromStringListToVarible(dataDict.get(varName)))
         return
 
-    def ConvertObjectToVaribleStringList(self, var) -> list[str]|None:
+    def ConvertObjectToVaribleStringList(self, var) -> list[str] | None:
         """
         通过重写该函数为更多类型提供序列化能力，返回的列表应有两个对象，第一个对象是仅含有一个字符串类型参数的，作为var类型的实例化函数名称
         然后另一个对象是实例化所需的字符串参数
