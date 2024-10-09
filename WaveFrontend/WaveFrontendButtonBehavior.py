@@ -42,7 +42,7 @@ class ButtonBehavior:
             insBtn.setEnabled(True)
 
     @staticmethod
-    def AddWaveBlock(selector,refreshUICallback):
+    def AddWaveBlock(selector, refreshUICallback):
         waveData = DataManager.WaveData()
         selector.ShowParameterPanel(waveData, lambda: selector.GetCurrentDevice().deviceSchedule.AddWave(waveData))
         refreshUICallback()

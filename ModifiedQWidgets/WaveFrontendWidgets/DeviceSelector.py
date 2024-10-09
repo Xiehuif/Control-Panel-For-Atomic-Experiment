@@ -79,6 +79,7 @@ class SelectorController:
             waveData.title = newData.get(self.StaticClarification.titleClarification)
             newData.pop(self.StaticClarification.titleClarification)
             waveData.parameter = newData
+            waveData.type = self.GetCurrentDataEnum()
             # 调用回调
             confirmAction()
         return None
