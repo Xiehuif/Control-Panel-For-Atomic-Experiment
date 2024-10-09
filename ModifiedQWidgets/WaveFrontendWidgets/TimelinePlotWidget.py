@@ -13,7 +13,7 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
     def __init__(self,timelinePlotWidget:QtWidgets.QWidget,timeline:Timeline.TimelinesController):
         super().__init__(timelinePlotWidget)
         self.timeline = timeline
-        # self.timeline.selectionManager.BindSelectionChangeEvent(self.ReplotDevicesAsynchronously)
+        self.timeline.selectionManager.BindSelectionChangeEvent(self.ReplotDevicesAsynchronously)
         self.deviceHandler = DataManager.deviceHandlerInstance
         self.bufferDict = {}
         self.plotLines = []
