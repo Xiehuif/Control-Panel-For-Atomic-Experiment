@@ -1,12 +1,12 @@
 from PyQt6 import QtWidgets
-import DataManager
+from DataStructure import DataManager
 from enum import Enum
 
 
 class AcquireDialog(QtWidgets.QDialog):
     """
 
-    本类用于
+    本类用于产生创建参数的Dialog，并返回对应的参数
 
     """
 
@@ -122,7 +122,7 @@ class AcquireDialog(QtWidgets.QDialog):
                 parameterValue = type(inputContent)
             except Exception as e:
                 closeButton = QtWidgets.QMessageBox.StandardButton.Close
-                result = self._ParameterConvertErrorDialog(name, inputContent, str(type), e, closeButton)
+                result = self.ParameterConvertErrorDialog(name, inputContent, str(type), e, closeButton)
                 if result == closeButton:
                     self._result = None
                     return
@@ -130,7 +130,8 @@ class AcquireDialog(QtWidgets.QDialog):
         self._checkState = True
         self.close()
 
-    def _ParameterConvertErrorDialog(self, parameterName: str, content: str, type: str, exception: Exception,
+    @staticmethod
+    def ParameterConvertErrorDialog(dialog, parameterName: str, content: str, type: str, exception: Exception,
                                      closeButton: QtWidgets.QPushButton) -> QtWidgets.QPushButton:
 
         """
@@ -147,10 +148,14 @@ class AcquireDialog(QtWidgets.QDialog):
                         + ' 时,读取到值为：' + content + '，无法转换类型到： '
                         + type
                         + ' ，错误类型为{}，请检查格式是否匹配'.format(exception))
-        result = QtWidgets.QMessageBox.critical(self, title, message, closeButton)
+        result = QtWidgets.QMessageBox.critical(dialog, title, message, closeButton)
         return result
 
     def _Cancel(self):
+        """
+        取消的事件的回调
+        :return: 事件回调，无返回值
+        """
         self._checkState = False
         self._result = None
         self.close()

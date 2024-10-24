@@ -1,11 +1,36 @@
+import copy
 import json
 
-import SerializationManager
+from DataStructure import SerializationManager
 
+class NodeData:
+
+    def __init__(self, attachedNode = None):
+        self._attachedNode = None
+
+    def SetAttachedNode(self, treeNode):
+        self._attachedNode = treeNode
+
+    def GetAttachedNode(self):
+        return self._attachedNode
 
 class TreeNode(SerializationManager.Serializable):
 
     __slots__ = ('_parent', '_data', '_children', '_index', '_tree')
+
+    def DeleteSelf(self):
+        self._parent.GetChildren().remove(self)
+        temp = []
+        for item in self._children:
+            temp.append(item)
+        for item in temp:
+            item.DeleteSelf()
+
+    def GetDepth(self) -> int:
+        if self._parent is None:
+            return 0
+        else:
+            return self._parent.GetDepth() + 1
 
     def __eq__(self, other):
         if isinstance(other, str):
@@ -19,6 +44,15 @@ class TreeNode(SerializationManager.Serializable):
 
     def __hash__(self):
         return self.GetHandler().__hash__()
+
+    def SetTree(self, newTree):
+        if newTree is self._tree:
+            return
+        newIndex = newTree.AssignIndex()
+        self._tree = newTree
+        self._index = newIndex
+        for node in self.GetChildren():
+            node.SetTree(newTree)
 
     def GetTree(self):
         """
@@ -47,20 +81,21 @@ class TreeNode(SerializationManager.Serializable):
     def Deserialize(self, jsonContext: str | None):
         super().Deserialize(jsonContext)
 
-    def GetData(self):
+    def GetData(self) -> NodeData:
         """
         获取所携带的数据
         :return: data
         """
         return self._data
 
-    def SetData(self, data):
+    def SetData(self, data: NodeData):
         """
         配置所携带的数据
         :param data: 配置的数据
         :return:
         """
         self._data = data
+        self._data.SetAttachedNode(self)
 
     def GetParent(self):
         """
@@ -70,13 +105,16 @@ class TreeNode(SerializationManager.Serializable):
         return self._parent
 
     def SetParent(self, parent):
-        '''
+        """
         设定父节点
         :param parent: 父节点
         :return:
-        '''
+        """
         self._parent = parent
         self._parent.GetChildren().append(self)
+        if self._parent.GetTree() is not self._tree:
+            newTree = parent.GetTree()
+            self.SetTree(newTree)
 
     def GetChildren(self):
         """
@@ -93,13 +131,39 @@ class TreeNode(SerializationManager.Serializable):
         """
         self._children.remove(child)
 
+    def __deepcopy__(self, memodict={}):
+        if self in memodict:
+            raise RuntimeError('deepcopy of TreeNode found circular copy')
+        newTreeNode = TreeNode(None)
+        newData = copy.deepcopy(self.GetData())
+        newTreeNode.SetData(newData)
+        memodict.update({self: True})
+        for node in self.GetChildren():
+            newChild = copy.deepcopy(node, memodict)
+            newChild.SetParent(newTreeNode)
+        return newTreeNode
+
+
     def __init__(self, tree, parent=None):
         super().__init__()
-        self._parent = parent
-        self._tree = tree
+        if isinstance(tree, Tree):
+            self._tree = tree
+            self._index = self._tree.AssignIndex()
+        elif tree is None:
+            self._tree = None
+            self._index = -1
+        else:
+            raise TypeError('arg tree has no type Tree is forbidden')
+        self._parent = None
+        if parent is None:
+            self._parent = None
+        elif isinstance(parent, TreeNode):
+            self.SetParent(parent)
+        else:
+            raise TypeError('arg parent has no type TreeNode is forbidden')
         self._children = []
-        self.data: SerializationManager.Serializable | None = None
-        self._index = self._tree.AssignIndex()
+        self._data: SerializationManager.Serializable | None = None
+
 
 class Tree(SerializationManager.Serializable):
 
@@ -151,7 +215,7 @@ class Tree(SerializationManager.Serializable):
         self._CollectNodes(nodeList, self._root)
         return nodeList
 
-    def GetRoot(self):
+    def GetRoot(self) -> TreeNode:
         return self._root
 
     def Serialize(self,encoder:json.JSONEncoder = json.JSONEncoder()) -> str:

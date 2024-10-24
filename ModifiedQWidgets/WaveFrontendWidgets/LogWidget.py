@@ -1,8 +1,8 @@
 from enum import Enum
 from PyQt6 import QtWidgets
-import CheckSelectionWidget
-import HTMLGenerator
-import LogManager
+import ModifiedQWidgets.GeneralWidgets.CheckSelectionWidget as CheckSelectionWidget
+import ModifiedQWidgets.GeneralWidgets.HTMLGenerator as HTMLGenerator
+from DataStructure import LogManager
 
 
 class BrowserController:

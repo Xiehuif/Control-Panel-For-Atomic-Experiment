@@ -9,7 +9,7 @@ Set the value of specified prperty
 
 __copyright__ = 'Copyright (C) 2024 Hamamatsu Photonics K.K.'
 
-from dcam import *
+from ThirdParty.DCAM.dcam import *
 # for control DCAM functions
 
 # True means dcamapi_init() was called and succeed.

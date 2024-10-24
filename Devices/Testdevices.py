@@ -1,10 +1,8 @@
 import numpy as np
 
-import DataManager
+from DataStructure import DataManager, LogManager
 import enum
-
-import LogManager
-from DataManager import WaveData
+from DataStructure.DataManager import WaveData
 import numpy
 
 class SineOutputData(enum.Enum):
@@ -37,7 +35,7 @@ class test(DataManager.Device):
         elif waveData.type == DemoOutput.Square:
             duration = parameter.get(DemoOutput.Square.value[1].Duration)
         else:
-            super().GetDuration(waveData)
+            duration = super().GetDuration(waveData)
         return duration
 
     def GetPlotMethod(self,waveData:WaveData):
@@ -59,9 +57,12 @@ class test(DataManager.Device):
         super().__init__('test1',output)
 
     def DeviceAwake(self):
-        LogManager.Log('设备已唤醒...' + self.deviceName)
+        LogManager.Log('设备已唤醒...' + self.deviceName, LogManager.LogType.Experiment)
 
     def DeviceRun(self):
-        LogManager.Log('设备正运行...' + self.deviceName)
+        LogManager.Log('设备正运行...' + self.deviceName, LogManager.LogType.Experiment)
+        # for waveData in self.deviceSchedule.scheduleData:
+            # LogManager.Log(str(waveData), LogManager.LogType.Experiment)
 
-DataManager.deviceHandlerInstance.RegisterObject(test())
+newDevice = test()
+DataManager.deviceHandlerInstance.RegisterObject(newDevice, newDevice.deviceName)

@@ -10,7 +10,7 @@ from matplotlib.backends.backend_qtcairo import FigureCanvasQTCairo as FigureCan
 from matplotlib.backends.backend_qtagg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.legend_handler import HandlerTuple
 import cProfile
-import LogManager
+from DataStructure import LogManager
 
 matplotlib.rcParams['font.family'] = 'SimHei'  # 或其他支持中文的字体
 matplotlib.rcParams['axes.unicode_minus'] = False  # 解决负号'-'显示为方块的问题

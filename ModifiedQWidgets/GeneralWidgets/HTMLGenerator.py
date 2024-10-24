@@ -37,7 +37,10 @@ class HTMLContent:
 
     def AppendText(self,text: str):
         targetStr = text
+        # 字符转换
         targetStr = targetStr.replace('\n', '<br>')
+        targetStr = targetStr.replace('<', ' &lt; ')
+        targetStr = targetStr.replace('>', ' &gt; ')
         targetStr = '<font color=' + self._color.value + '>' + targetStr + '</font>'
         if self._fontDisplayType == self.DisplayType.Normal:
             targetStr = targetStr
