@@ -3,7 +3,7 @@ from enum import Enum, IntEnum
 from multiprocessing import Queue
 from time import sleep
 
-from PyQt6.QtCore import QThread, QMutex, pyqtSignal
+from PyQt6.QtCore import QThread, QMutex, pyqtSignal, Qt
 
 import DataStructure.DataManager
 import MultiprocessSupport.MultiprocessKernel
@@ -310,9 +310,9 @@ class TaskManager:
         # 产生线程，注入依赖
         self._taskThread = TaskRunningThread(self._taskDeque, self._indexAssigned, self._controller)
         if self._stateCallback is not None:
-            self._taskThread.stateChange.connect(self._stateCallback)
-        self._taskThread.logOutput.connect(lambda string: LogManager.Log(string, LogManager.LogType.Runtime))
-        self._taskThread.runCallback.connect(lambda dataTuple: (self._callbackDict.get(dataTuple[0]))(dataTuple))
+            self._taskThread.stateChange.connect(self._stateCallback, type=Qt.ConnectionType.BlockingQueuedConnection)
+        self._taskThread.logOutput.connect(lambda string: LogManager.Log(string, LogManager.LogType.Runtime), type=Qt.ConnectionType.BlockingQueuedConnection)
+        self._taskThread.runCallback.connect(lambda dataTuple: (self._callbackDict.get(dataTuple[0]))(dataTuple), type=Qt.ConnectionType.BlockingQueuedConnection)
         # 线程启动
         self._taskThread.Start()
 
