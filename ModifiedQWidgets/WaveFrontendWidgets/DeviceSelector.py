@@ -1,8 +1,8 @@
 from PyQt6 import QtWidgets
-import DataManager
+from DataStructure import DataManager
 from enum import Enum
 
-import ParameterAcquireDialog
+import ModifiedQWidgets.GeneralWidgets.ParameterAcquireDialog as ParameterAcquireDialog
 
 '''
 
@@ -11,7 +11,7 @@ import ParameterAcquireDialog
 
     FINISHED: 重构 分离为ParameterAcquireDialog 和 本类 以实现参数获取窗口复用
     
-    2024/10/8 : 完成重构
+    2024/10/8 :  完成重构
 
 '''
 
@@ -21,10 +21,10 @@ class SelectorController:
     class StaticClarification(Enum):
         titleClarification = ['标题', str]
 
-    def __init__(self,deviceQList:QtWidgets.QListWidget,waveQList:QtWidgets.QListWidget):
+    def __init__(self, deviceQList: QtWidgets.QListWidget, waveQList: QtWidgets.QListWidget):
         self.deviceQList = deviceQList
         self.waveQList = waveQList
-        deviceNameList:[str] = DataManager.deviceHandlerInstance.GetObjectNames()
+        deviceNameList: list[str] = DataManager.deviceHandlerInstance.GetObjectNames()
         self.deviceQList.addItems(deviceNameList)
         self.deviceQList.currentRowChanged.connect(self._LoadWaveList)
         self.parameterPanel = None
@@ -57,10 +57,10 @@ class SelectorController:
         dataEnum = item.data(100)
         return dataEnum
 
-    def ShowParameterPanel(self, waveData: DataManager.WaveData, confirmAction):
+    def ShowParameterPanel(self, waveData: DataManager.WaveData, confirmAction) -> bool:
         dataEnum = self.GetCurrentDataEnum()
         if dataEnum is None:
-            return None
+            return False
         else:
             # 构建enumClass的List，这些class指示了应该收集的参数
             enumClassList = [self.GetCurrentDataEnum().value[1], self.StaticClarification]
@@ -74,7 +74,7 @@ class SelectorController:
             argsDialog = ParameterAcquireDialog.AcquireDialog(enumClassList, presetting)
             newData = argsDialog.Activate()
             if newData is None:
-                return None
+                return False
             # 向WaveData中应用
             waveData.title = newData.get(self.StaticClarification.titleClarification)
             newData.pop(self.StaticClarification.titleClarification)
@@ -82,6 +82,6 @@ class SelectorController:
             waveData.type = self.GetCurrentDataEnum()
             # 调用回调
             confirmAction()
-        return None
+        return True
 
 

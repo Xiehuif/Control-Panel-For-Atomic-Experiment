@@ -1,7 +1,7 @@
 import inspect
 import time
 from enum import Enum
-import SerializationManager
+from DataStructure import SerializationManager
 import datetime
 
 class LogType(Enum):
@@ -9,6 +9,7 @@ class LogType(Enum):
     Error = 'Error'
     Runtime = 'Runtime'
     Any = 'Any'
+    Experiment = 'Experiment'
 
 class LogRecord(SerializationManager.Serializable):
 
@@ -70,7 +71,7 @@ class LogData(SerializationManager.Serializable):
             self.logContentDict.update({logType :[]})
         super().__init__()
 
-    def SendLog(self,logRecord: LogRecord):
+    def SendLog(self, logRecord: LogRecord):
         targetDict = self.logContentDict.get(logRecord.type)
         targetDict.append(logRecord)
 
@@ -90,10 +91,15 @@ class _ExperimentLogHandler:
         self.logData = LogData()
         self._callbacks = []
 
-    def RegisterCallback(self,callback):
+    def SendLog(self, logRecord: LogRecord):
+        for callback in self._callbacks:
+            callback(logRecord)
+        self.logData.SendLog(logRecord)
+
+    def RegisterCallback(self, callback):
         self._callbacks.append(callback)
 
-    def Log(self,log: str,type: LogType = LogType.Any):
+    def Log(self, log: str, type: LogType = LogType.Any):
         logRecord = LogRecord()
         logRecord.SetType(type)
         logRecord.SetTime(datetime.datetime.now())
@@ -116,8 +122,11 @@ _experimentLogHandler = _ExperimentLogHandler()
 def RegisterCallback(callback):
     _experimentLogHandler.RegisterCallback(callback)
 
+def LogByLogRecord(logRecord: LogRecord):
+    _experimentLogHandler.SendLog(logRecord)
+
 def GetLogData():
     return _experimentLogHandler.logData
 
 def Log(info: str, logType: LogType = LogType.Any):
-    _experimentLogHandler.Log(info,logType)
+    _experimentLogHandler.Log(info, logType)

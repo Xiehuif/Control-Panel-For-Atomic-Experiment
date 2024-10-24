@@ -15,63 +15,28 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QTreeWidget" name="ScheduleTree">
+    <widget class="MenuTreeWidget" name="ScheduleTree">
      <property name="sizeAdjustPolicy">
       <enum>QAbstractScrollArea::AdjustIgnored</enum>
      </property>
      <property name="editTriggers">
       <set>QAbstractItemView::NoEditTriggers</set>
      </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::ExtendedSelection</enum>
+     </property>
      <property name="selectionBehavior">
       <enum>QAbstractItemView::SelectRows</enum>
      </property>
+     <column>
+      <property name="text">
+       <string notr="true">1</string>
+      </property>
+     </column>
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="EditLayout">
-     <item>
-      <widget class="QPushButton" name="TableEditBtn">
-       <property name="text">
-        <string>编辑</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="TableDeleteBtn">
-       <property name="text">
-        <string>删除</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="TableCopyBtn">
-       <property name="text">
-        <string>复制</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="TableCutBtn">
-       <property name="text">
-        <string>剪切</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="TablePasteBtn">
-       <property name="text">
-        <string>粘贴</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <widget class="Line" name="line">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-    </widget>
+    <layout class="QHBoxLayout" name="EditLayout"/>
    </item>
    <item>
     <layout class="QHBoxLayout" name="InteractiveLayout" stretch="0,0,0,0,0">
@@ -200,6 +165,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MenuTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>EditableTableWidget</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

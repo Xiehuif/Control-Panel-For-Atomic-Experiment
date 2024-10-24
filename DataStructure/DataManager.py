@@ -2,8 +2,7 @@ import json
 
 from abc import abstractmethod,ABC
 
-import LogManager
-import SerializationManager
+from DataStructure import LogManager, SerializationManager
 import enum
 import copy
 
@@ -11,10 +10,21 @@ import copy
 class WaveData(SerializationManager.Serializable):
     __slots__ = ('type', 'parameter', 'title')
 
+    def __str__(self):
+        newStr = 'Type:{} title:{} parameter:{} '.format(self.type, self.title, self.parameter)
+        return newStr
+
     def CopyFrom(self, waveData):
         self.type = copy.deepcopy(waveData.type)
         self.parameter = copy.deepcopy(waveData.parameter)
         self.title = copy.deepcopy(waveData.title)
+
+    def __deepcopy__(self, memodict={}):
+        newWaveData = WaveData()
+        newWaveData.title = copy.deepcopy(self.title)
+        newWaveData.type = self.type
+        newWaveData.parameter = copy.deepcopy(self.parameter)
+        return newWaveData
 
     def __init__(self,*args):
         # duration:float, type,parameter,title='default'
@@ -73,8 +83,7 @@ class DeviceSchedule(SerializationManager.Serializable):
         self._device = deviceSchedule.GetAttachedDevice()
         self.scheduleData.clear()
         for index in range(0, len(deviceSchedule.scheduleData)):
-            newWaveData = WaveData()
-            newWaveData.CopyFrom(deviceSchedule.scheduleData[index])
+            newWaveData = copy.deepcopy(deviceSchedule.scheduleData[index])
             self.scheduleData.append(newWaveData)
 
 
@@ -138,19 +147,19 @@ class Device(SerializationManager.Serializable):
 class ObjectHandler:
 
     def __init__(self):
-        self._devices = {}
+        self._objects = {}
 
     def GetObjectNames(self) -> list[str]:
-        return list(self._devices.keys())
+        return list(self._objects.keys())
 
-    def RegisterObject(self, device: Device):
-        self._devices.update({device.deviceName: device})
+    def RegisterObject(self, object, objectName):
+        self._objects.update({objectName: object})
 
     def GetObjects(self) -> list[Device]:
-        return list(self._devices.values())
+        return list(self._objects.values())
 
-    def GetObject(self, deviceName: str):
-        return self._devices.get(deviceName)
+    def GetObject(self, objectName: str):
+        return self._objects.get(objectName)
 
 
 deviceHandlerInstance = ObjectHandler()

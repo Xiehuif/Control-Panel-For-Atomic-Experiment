@@ -1,28 +1,52 @@
 import enum
 
 from PyQt6 import QtWidgets, QtCore
+from PyQt6.QtGui import QAction, QCursor
+from PyQt6.QtWidgets import QMenu
 
-import LogManager
+from DataStructure import LogManager
+from ModifiedQWidgets.GeneralWidgets.MenuGenerator import QuickMenu
+
+
+class MenuTreeWidget(QtWidgets.QTreeWidget, QuickMenu):
+
+    def __init__(self, **kwargs):
+        super().__init__(parent=kwargs.get('parent'))
+
+    def contextMenuEvent(self, *args, **kwargs):
+        self.ShowMenu()
 
 
 class MulticolumnTree:
 
-    def __init__(self, treeWidget: QtWidgets.QTreeWidget, controlEnumClass):
+    def SelectAllLeafItem(self):
+        self._frontend.expandAll()
+        for item in self._topLevelItems:
+            self._SetAllLeafNodeSelected(item)
+
+    def AddMenuCallback(self, callback):
+        self._frontend.AddMenuCallback(callback)
+
+    def __init__(self, treeWidget: MenuTreeWidget, headerEnumClass, menuEnumClass):
+
         """
         此类意在使用一个枚举创造一个列表并用QTableWidget作为前端显示，枚举的每一项的值都将作为列的表。
         这个列表的每一项可以包含多个允许被QTableWidget显示的项，并以同枚举一一对应的方式显示
 
         :param tableWidget: QTableWidget组件的实例
-        :param controlEnumClass: 用以创建对应组件的枚举类（继承Enum），直接传入类的标识符而非实例
+        :param headerEnumClass: 用以创建对应组件的枚举类（继承Enum），直接传入类的标识符而非实例
         """
+
         self._columnCount = 0
-        self._frontend: QtWidgets.QTreeWidget = treeWidget
-        self._indicatedType = controlEnumClass
+        self._frontend: MenuTreeWidget = treeWidget
+        self._indicatedType = headerEnumClass
         self._columnIndexMap: dict = {}
+        self._frontend.SetMenuEnumClass(menuEnumClass)
+        self._topLevelItems: list[QtWidgets.QTreeWidgetItem] = []
 
         # 构建映射关系
         tempHeaderList = []
-        for headerItem in controlEnumClass:
+        for headerItem in headerEnumClass:
             tempHeaderList.append(headerItem)
         self._columnCount = len(tempHeaderList)
         self._frontend.setColumnCount(self._columnCount)
@@ -33,7 +57,14 @@ class MulticolumnTree:
             self._columnIndexMap.update({headerItem: index})
         self._frontend.setHeaderItem(treeHeader)
 
-    def _CreateItem(self,data: dict, userData = None) -> QtWidgets.QTreeWidgetItem:
+    def _SetAllLeafNodeSelected(self, nodeItem: QtWidgets.QTreeWidgetItem):
+        if nodeItem.childCount() != 0:
+            for i in range(nodeItem.childCount()):
+                self._SetAllLeafNodeSelected(nodeItem.child(i))
+        else:
+            nodeItem.setSelected(True)
+
+    def _CreateItem(self, data: dict, userData = None) -> QtWidgets.QTreeWidgetItem:
         newTreeItem = QtWidgets.QTreeWidgetItem()
         for item in self._indicatedType:
             columnIndex = self._columnIndexMap.get(item)
@@ -47,6 +78,27 @@ class MulticolumnTree:
             if not isinstance(indicateEnum, self._indicatedType):
                 raise RuntimeError
 
+    def _AddTopLevelItem(self, item: QtWidgets.QTreeWidgetItem):
+        self._frontend.addTopLevelItem(item)
+        self._topLevelItems.append(item)
+
+    def _AddTopLevelItems(self, items: list[QtWidgets.QTreeWidgetItem]):
+        self._frontend.addTopLevelItems(items)
+        self._topLevelItems.extend(items)
+
+    def _DeleteTopLevelItem(self, item: QtWidgets.QTreeWidgetItem):
+        index = self._frontend.indexOfTopLevelItem(item)
+        if index == -1:
+            LogManager.Log("No such item in TreeWidget, check again?", LogManager.LogType.Error)
+            return False
+        self._frontend.takeTopLevelItem(index)
+        self._topLevelItems.remove(item)
+        return True
+
+    def GetColumnIndex(self, item: enum):
+        columnIndex = self._columnIndexMap.get(item)
+        return columnIndex
+
     def InsertItem(self, data: dict, parent: QtWidgets.QTreeWidgetItem = None, userData = None) \
             -> QtWidgets.QTreeWidgetItem:
         """
@@ -59,7 +111,7 @@ class MulticolumnTree:
         self._CheckDataRule(data)
         item = self._CreateItem(data, userData)
         if parent is None:
-            self._frontend.addTopLevelItem(item)
+            self._AddTopLevelItem(item)
         else:
             parent.addChild(item)
         return item
@@ -78,24 +130,33 @@ class MulticolumnTree:
             data = pack[0]
             userData = pack[1]
             itemList.append(self._CreateItem(data, userData))
-        parent.addChildren(itemList)
+        if parent is not None:
+            parent.addChildren(itemList)
+        else:
+            self._AddTopLevelItems(itemList)
         return itemList
 
     def DeleteItem(self, item: QtWidgets.QTreeWidgetItem) -> bool:
+        if not isinstance(item, QtWidgets.QTreeWidgetItem):
+            LogManager.Log('MulticolumnTree: Invalid input for deleted item --- '
+                           'type of deleted item is {} but not QTreeWidgetItem'.format(type(item)))
+            return False
         parent: QtWidgets.QTreeWidgetItem | None = item.parent()
         if parent is None:
-            index = self._frontend.indexOfTopLevelItem(item)
-            if index == -1:
-                LogManager.Log("No such item in TreeWidget, check again?", LogManager.LogType.Error)
-                return False
-            self._frontend.takeTopLevelItem(index)
+            self._DeleteTopLevelItem(item)
+        else:
+            index = parent.indexOfChild(item)
+            parent.takeChild(index)
             return True
-        if parent is not None:
-            parent.takeChild(item)
-            return True
+
+    def SetLayoutPolicyToAdaptContent(self):
+        header: QtWidgets.QHeaderView = self._frontend.header()
+        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+        return
 
     def ClearItems(self):
         self._frontend.clear()
+        self._topLevelItems.clear()
 
     def GetUserData(self, item: QtWidgets.QTreeWidgetItem):
         return item.data(0, 0x0100)

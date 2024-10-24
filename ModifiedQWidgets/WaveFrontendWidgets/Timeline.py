@@ -1,30 +1,29 @@
 from PyQt6 import QtCore, QtWidgets
 
-import LogManager
-import ModifiedLabels
-import MultiselectionManager
-from QSSConstant import QSSPresetting
-import DataManager
-import DeviceSelector
+from DataStructure import LogManager, MultiselectionManager, DataManager
+import ModifiedQWidgets.GeneralWidgets.ModifiedLabels as ModifiedLabels
+from ModifiedQWidgets.WaveFrontendWidgets.QSSConstant import QSSWaveBlockPresetting
+from ModifiedQWidgets.WaveFrontendWidgets import DeviceSelector
 
 class WaveBlock:
     # internal methods
 
     def _ApplyQSS(self, label: ModifiedLabels.SelectableLabel):
-        '''
+        """
         一个用于应用QSS表的内部函数，在生成Label时使用
         :param label: 被应用样式表的组件
         :return:
-        '''
-        label.SetQSS(ModifiedLabels.DisplayState.coveredBy, QSSPresetting.CoverBy)
-        label.SetQSS(ModifiedLabels.DisplayState.standBy, QSSPresetting.StandBy)
-        label.SetQSS(ModifiedLabels.DisplayState.selected, QSSPresetting.Selected)
+        """
+        label.SetQSS(ModifiedLabels.DisplayState.coveredBy, QSSWaveBlockPresetting.CoverBy)
+        label.SetQSS(ModifiedLabels.DisplayState.standBy, QSSWaveBlockPresetting.StandBy)
+        label.SetQSS(ModifiedLabels.DisplayState.selected, QSSWaveBlockPresetting.Selected)
         label.RefreshDisplay(False)
 
-    def _ApplyText(self, label: ModifiedLabels.SelectableLabel, title: str, duration: str, detail: str):
+    def _ApplyText(self, label: ModifiedLabels.SelectableLabel, title: str, duration: str, detail: str, index: int):
         textSet: str = title + '\n'
+        textSet = textSet + '序号:{}'.format(index) + '\n'
         textSet = textSet + duration + '\n'
-        textSet = textSet + detail + '\n'
+        textSet = textSet + detail
         label.setWordWrap(False)
         label.setText(textSet)
 
@@ -41,12 +40,14 @@ class WaveBlock:
 
     # public methods
     def ResizeLength(self, length: float,minimunSizeRatio: float = 0.1):
-        '''
+
+        """
         重新定义这个Label的长度
         :param length: 时间长度
         :param minimunSizeRatio: 每一个时间块所占最小比例
         :return:
-        '''
+        """
+
         # 控件伸缩规则 纵向宽度可延伸 横向长度固定
         policyControl = QtWidgets.QSizePolicy.Policy
         self._blockLabel.setSizePolicy(policyControl.Fixed, policyControl.Expanding)
@@ -90,7 +91,7 @@ class WaveBlock:
                                                           self.waveData)
         self._blockLabel.SetSelectState(state)
         #应用文字描述
-        self._ApplyText(self._blockLabel, self.title, str(self.duration), self.detail)
+        self._ApplyText(self._blockLabel, self.title, str(self.duration), self.detail, self.index)
         #应用样式表
         self._ApplyQSS(self._blockLabel)
         #应用事件
@@ -99,9 +100,9 @@ class WaveBlock:
         self.ResizeLength(self.duration)
         return self._blockLabel
 
-    __slots__ = ('waveData','title','detail','duration','_blockLabel','timeLine')
+    __slots__ = ('waveData', 'title', 'detail', 'duration', '_blockLabel', 'timeLine', 'index')
 
-    def __init__(self, waveData: DataManager.WaveData, timeline, duration):
+    def __init__(self, waveData: DataManager.WaveData, timeline, duration, index):
         '''
         以Label形式显示一段信号
         :param waveData: 被显示的信号输出模块
@@ -112,6 +113,7 @@ class WaveBlock:
         self.detail = str(waveData.type.value[0])
         self._blockLabel: (ModifiedLabels.SelectableLabel or None) = None
         self.timeLine = timeline
+        self.index = index
 
 
 class TimelinesController:
@@ -126,6 +128,7 @@ class TimelinesController:
         self.centralWidget = QtWidgets.QWidget()
         self.centralWidget.setSizePolicy(QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding)
         self.scrollArea.setWidget(self.centralWidget)
+        self.centralWidget.setStyleSheet('background-color:white;')
         self.layout = QtWidgets.QHBoxLayout(self.centralWidget)
         self.layout.setSpacing(0)
         self.spacer = QtWidgets.QSpacerItem(1, 1, QtWidgets.QSizePolicy.Policy.Expanding,
@@ -137,8 +140,8 @@ class TimelinesController:
             self.blockList.pop().Clear()
         self.selectionManager.Clear()
 
-    def _LoadWaveIntoLayout(self, waveData: DataManager.WaveData):
-        waveBlock = WaveBlock(waveData,self,self.deviceSelector.GetCurrentDevice().GetDuration(waveData))
+    def _LoadWaveIntoLayout(self, waveData: DataManager.WaveData, index: int = -1):
+        waveBlock = WaveBlock(waveData,self,self.deviceSelector.GetCurrentDevice().GetDuration(waveData), index)
         self.blockList.append(waveBlock)
         targetLabel = waveBlock.GenerateLabel()
         self.layout.addWidget(targetLabel)
@@ -178,6 +181,6 @@ class TimelinesController:
         if length == 0:
             LogManager.Log('Timeline null')
             return
-        for i in range(0,length):
-            self._LoadWaveIntoLayout(self._scheduleData[i])
+        for i in range(0, length):
+            self._LoadWaveIntoLayout(self._scheduleData[i], i)
         self._ResetSpacer()

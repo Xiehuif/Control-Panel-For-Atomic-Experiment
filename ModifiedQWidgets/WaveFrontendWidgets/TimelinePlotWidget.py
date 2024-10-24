@@ -1,10 +1,10 @@
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QThread, QMutex
 
-import ModifiedLabels
-import PlotWidget
-import Timeline
-import DataManager
+import ModifiedQWidgets.GeneralWidgets.ModifiedLabels as ModifiedLabels
+import ModifiedQWidgets.GeneralWidgets.PlotWidget as PlotWidget
+from ModifiedQWidgets.WaveFrontendWidgets import Timeline
+from DataStructure import DataManager
 import cProfile
 
 
@@ -26,7 +26,6 @@ class TimelinePlotWidgetController(PlotWidget.PlotWidgetController):
         length = len(deviceScheduleData)
         timeRecord = 0.0
         waveDuration = 0.0
-        cycleCondition = True
         if device == selectedDevice:
             # 分类 区分高亮和普通
             highlightBuffer = PlotWidget.FunctionPlotBuffer()

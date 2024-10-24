@@ -1,7 +1,7 @@
 import enum
 import json
 import sys
-import LogManager
+from DataStructure import LogManager
 
 
 class Serializable:
@@ -35,7 +35,7 @@ class Serializable:
         argObj = stringList[3]
         targetModule = sys.modules.get(moduleStr)
         targetClass = targetModule.__getattribute__(classStr)
-        targetMethod = getattr(targetClass,methodStr)
+        targetMethod = getattr(targetClass, methodStr)
         obj = targetMethod(argObj)
         return obj
 

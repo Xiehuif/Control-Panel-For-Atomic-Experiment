@@ -2,26 +2,20 @@ import json
 
 from PyQt6 import QtWidgets
 
-import CheckSelectionWidget
-import DataManager
-import FileManager
-import LogManager
+import ModifiedQWidgets.GeneralWidgets.CheckSelectionWidget as CheckSelectionWidget
+from DataStructure import DataManager, FileManager, LogManager
 
 
 class WaveIO:
     @staticmethod
     def OpenFileAction(parent, finishedCallback):
         # 呼出文件调用窗口
-        fileDirList = QtWidgets.QFileDialog(parent).getOpenFileName(parent)
+        fileDir = FileManager.SerializableIO.DisplayFileOpenDialog(parent, '波形文件',
+                                                                   FileManager.FileExtensionRule.WaveDataFile)
         targetStr = None
-        if fileDirList is not None:
-            # 打开文件并读取
-            fileDir = fileDirList[0]
+        if fileDir is not None:
             targetStr = FileManager.SerializableIO.ReadStringFromFile(fileDir)
-        if targetStr is None:
-            LogManager.Log('WaveIO: Read Err. : Can not read string, you may have canceled your reading action.'
-                           'Otherwise, there is an exception have occured.', LogManager.LogType.Error)
-        else:
+        if targetStr is not None:
             # 反序列化json为文本字典
             deviceStrDict:dict = json.loads(targetStr)
             deviceDict = {}
@@ -47,8 +41,9 @@ class WaveIO:
     @staticmethod
     def SaveFileAction(parent):
         # 呼出文件调用窗口
-        fileDirList = QtWidgets.QFileDialog(parent).getSaveFileName(parent)
-        if fileDirList is not None:
+        fileDir = FileManager.SerializableIO.DisplayFileSaveDialog(parent, '波形文件',
+                                                                   FileManager.FileExtensionRule.WaveDataFile)
+        if fileDir is not None:
             # 创建以设备名为Key，设备的波形计划的序列化字符串为Value的字典
             deviceList = DataManager.deviceHandlerInstance.GetObjects()
             targetDict = {}
@@ -59,33 +54,27 @@ class WaveIO:
             # 对
             targetStr = json.dumps(targetDict,indent=4)
             # 获取文件保存位置，打开并写入
-            fileDir = fileDirList[0]
             FileManager.SerializableIO.WriteStringToFile(fileDir, targetStr)
 
 class LogIO:
 
     @staticmethod
-    def _NullFunction():
-        # 空函数，用于填充空的回调
-        return
-
-    @staticmethod
     def SaveFileAction(logData: LogManager.LogData, parent = None):
         # 获得目标文件位置和序列化的对象
         targetStr = logData.Serialize()
-        fileDirList = QtWidgets.QFileDialog(parent).getSaveFileName(parent)
+        fileDir = FileManager.SerializableIO.DisplayFileSaveDialog(parent, '日志文件',
+                                                                   FileManager.FileExtensionRule.LogDataFile)
         # 写入文件
-        if fileDirList is not None:
-            fileDir = fileDirList[0]
+        if fileDir is not None:
             FileManager.SerializableIO.WriteStringToFile(fileDir, targetStr)
 
     @staticmethod
     def OpenFileAction(logData: LogManager.LogData, parent = None, refreshCallBack = None):
         # 获取文件位置
-        fileDirList = QtWidgets.QFileDialog(parent).getOpenFileName(parent)
-        if fileDirList is not None:
+        fileDir = FileManager.SerializableIO.DisplayFileOpenDialog(parent, '日志文件',
+                                                                   FileManager.FileExtensionRule.LogDataFile)
+        if fileDir is not None:
             # 读文件
-            fileDir = fileDirList[0]
             targetStr = FileManager.SerializableIO.ReadStringFromFile(fileDir)
             # 空字符串检查
             if targetStr is None:
@@ -95,4 +84,3 @@ class LogIO:
         # 触发刷新回调
         if refreshCallBack is not None:
             refreshCallBack()
-

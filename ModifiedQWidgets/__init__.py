@@ -1,0 +1,2 @@
+from ModifiedQWidgets import GeneralWidgets
+from ModifiedQWidgets import ExperimentSchedulerWidgets, WaveFrontendWidgets

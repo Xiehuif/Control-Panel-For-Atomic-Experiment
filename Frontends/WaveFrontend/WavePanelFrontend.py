@@ -1,29 +1,32 @@
 # PRIORITY : Data control
-import DataManager
-import DevicesImport
-import LogManager
+from DataStructure import DataManager, LogManager
 
 # third-party libs or system libs
-import sys
 import PyQt6
 from PyQt6 import QtWidgets
 
 # Modified widgets
-import ModifiedLabels
-import Timeline
-import DeviceSelector
-import LogWidget
-import TimelinePlotWidget
-import SchedulerFrontend
+from ModifiedQWidgets.WaveFrontendWidgets import Timeline, DeviceSelector, LogWidget, TimelinePlotWidget
+from Frontends.SchedulerFrontend import SchedulerFrontend
 
 # Widget Support
-import WaveFrontendButtonBehavior
-import WaveFrontendFileIO
-import WavePanelFrontendForm
-
+from Frontends.WaveFrontend import WaveFrontendButtonBehavior, WaveFrontendFileIO, WavePanelFrontendForm
 
 
 class WaveFrontend(PyQt6.QtWidgets.QMainWindow):
+
+    def closeEvent(self, a0, QCloseEvent=None):
+        messageBox = QtWidgets.QMessageBox()
+        button = messageBox.question(self, '程序结束', '你正在关闭主界面，关闭将回收所有窗口并结'
+                                                       '束程序的生命周期，并且所有未保存的内容都会丢失，确认关闭吗？')
+        if button == QtWidgets.QMessageBox.StandardButton.Yes:
+            for item in self.frontendFinder:
+                widget: QtWidgets.QWidget = self.frontendFinder.get(item)
+                widget.deleteLater()
+            a0.accept()
+        else:
+            a0.ignore()
+
     def __init__(self, frontendFinder: dict):
         # parent init
         super().__init__()
@@ -46,40 +49,40 @@ class WaveFrontend(PyQt6.QtWidgets.QMainWindow):
 
         # 事件绑定
         (self.timeLineController.
-         selectionManager.
-         BindSelectionChangeEvent(
-            lambda:WaveFrontendButtonBehavior.ButtonBehavior.
-            ButtonStateCheck(form.DeleteOperationBtn,form.ModifyOperationBtn,
-                             form.InsertOperationBtn,self.timeLineController.
+        selectionManager.
+        BindSelectionChangeEvent(
+            lambda: WaveFrontendButtonBehavior.ButtonBehavior.
+            ButtonStateCheck(form.DeleteOperationBtn, form.ModifyOperationBtn,
+                             form.InsertOperationBtn, self.timeLineController.
                              selectionManager)
         ))
 
         (form.AddOperationBtn.clicked.connect(
-            lambda :WaveFrontendButtonBehavior.ButtonBehavior.AddWaveBlock(self.selector, self.RefreshUI)
+            lambda: WaveFrontendButtonBehavior.ButtonBehavior.AddWaveBlock(self.selector, self.RefreshUI)
         ))
 
         (form.DeleteOperationBtn.
-         clicked.connect(
-            lambda :WaveFrontendButtonBehavior.ButtonBehavior.
+        clicked.connect(
+            lambda: WaveFrontendButtonBehavior.ButtonBehavior.
             DeleteWaveBlock(self.timeLineController.selectionManager, self.selector, self.RefreshUI)
         ))
 
         (form.ModifyOperationBtn.
-         clicked.connect(
-            lambda :WaveFrontendButtonBehavior.ButtonBehavior.
+        clicked.connect(
+            lambda: WaveFrontendButtonBehavior.ButtonBehavior.
             ModifyWaveBlock(self.timeLineController.selectionManager, self.selector, self.RefreshUI)
         ))
 
         (form.InsertOperationBtn.
-         clicked.connect(
-            lambda :WaveFrontendButtonBehavior.ButtonBehavior.InsertWaveBlock(
+        clicked.connect(
+            lambda: WaveFrontendButtonBehavior.ButtonBehavior.InsertWaveBlock(
                 self.timeLineController.selectionManager, self.selector, self.RefreshUI
             )
         ))
 
         (form.SchedulerPanelBtn.
-         clicked.connect(
-            lambda :WaveFrontendButtonBehavior.ButtonBehavior.ShowPanel(
+        clicked.connect(
+            lambda: WaveFrontendButtonBehavior.ButtonBehavior.ShowPanel(
                 self.frontendFinder.get(SchedulerFrontend.ExperimentScheduler)
             )
         ))

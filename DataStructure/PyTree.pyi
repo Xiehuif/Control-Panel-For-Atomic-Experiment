@@ -2,20 +2,30 @@ from typing import overload
 
 import SerializationManager
 
+class NodeData:
+
+    def __init__(self, attachedNode: TreeNode | None = None):
+        self._attachedNode = None
+
+    def SetAttachedNode(self, treeNode: TreeNode): ...
+
+    def GetAttachedNode(self) -> TreeNode: ...
 
 class TreeNode(SerializationManager.Serializable):
 
+    def DeleteSelf(self): ...
+
     @overload
-    def __init__(self, tree: Tree, parent: TreeNode | None = None):
+    def __init__(self, tree: Tree | None, parent: TreeNode | None = None):
         self._tree: Tree = None
         self._parent: TreeNode | None = None
         self._children: list[TreeNode] = None
         self._data = None
         self._index: int | None = None
 
-    def SetData(self, data: SerializationManager.Serializable | None): ...
+    def SetData(self, data: NodeData | None): ...
 
-    def GetData(self) -> SerializationManager.Serializable | None: ...
+    def GetData(self) -> NodeData | None: ...
 
     def GetChildren(self) -> list[TreeNode]: ...
 
@@ -36,6 +46,8 @@ class TreeNode(SerializationManager.Serializable):
 
     def GetTree(self) -> Tree: ...
 
+    def SetTree(self, tree: Tree): ...
+
 
 class Tree(SerializationManager.Serializable):
 
@@ -44,7 +56,7 @@ class Tree(SerializationManager.Serializable):
         self._assignedIndex: int = None
         self._root: TreeNode = None
 
-    def GetRoot(self): ...
+    def GetRoot(self) -> TreeNode: ...
 
     def _SearchDataKernel(self, targetData, targetNode: TreeNode): ...
 

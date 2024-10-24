@@ -10,7 +10,7 @@ are subject to change without notice.
 __date__ = '2021-06-30'
 __copyright__ = 'Copyright (C) 2021-2024 Hamamatsu Photonics K.K.'
 
-from dcamapi4 import *
+from ThirdParty.DCAM.dcamapi4 import *
 # DCAM-API v4 module
 
 import numpy as np
@@ -144,9 +144,9 @@ class Dcamapi:
 
     @classmethod
     def uninit(cls):
-        """Uninitialize DCAM-API.
+        """Uninitialized DCAM-API.
 
-        Uninitialize DCAM-API.
+        Uninitialized DCAM-API.
         After using DCAM-API, call this function to close all resources.
 
         Returns:

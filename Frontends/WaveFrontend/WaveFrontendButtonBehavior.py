@@ -1,14 +1,12 @@
 # third-party libs or system libs
+import copy
+
 from PyQt6 import QtWidgets,QtCore,QtGui
 from artiq.experiment import *
 
-import DataManager
-import DeviceSelector
-import LogManager
-import ModifiedLabels
-import MultiselectionManager
-import Timeline
-import TimelinePlotWidget
+from DataStructure import DataManager, LogManager, MultiselectionManager
+from ModifiedQWidgets.WaveFrontendWidgets import DeviceSelector, Timeline, TimelinePlotWidget
+import ModifiedQWidgets.GeneralWidgets.ModifiedLabels as ModifiedLabels
 
 
 class ButtonBehavior:
@@ -90,17 +88,18 @@ class ButtonBehavior:
         if len(selectedWaveLabels) != 1:
             return
         selectedWaveData = selectedWaveLabels[0].attachedObject
-        newWaveData = DataManager.WaveData()
-        newWaveData.CopyFrom(selectedWaveData)
-        selector.ShowParameterPanel(newWaveData, lambda :selectedWaveData.CopyFrom(newWaveData))
+        newWaveData = copy.deepcopy(selectedWaveData)
+        selector.ShowParameterPanel(newWaveData, lambda: selectedWaveData.CopyFrom(newWaveData))
         refreshCallback()
 
     @staticmethod
     def ShowPanel(panel: QtWidgets.QWidget):
         if panel.isVisible():
             LogManager.Log("Panel has already been opened", LogManager.LogType.Runtime)
+            panel.showNormal()
             return
         else:
             panel.show()
+
 
 

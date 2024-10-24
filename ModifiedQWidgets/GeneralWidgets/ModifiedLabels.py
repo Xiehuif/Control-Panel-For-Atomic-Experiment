@@ -1,9 +1,9 @@
 from PyQt6 import QtWidgets
 from PyQt6.QtWidgets import QWidget
-import EventHandler
+import ModifiedQWidgets.GeneralWidgets.EventHandler as EventHandler
 import enum
-from MultiselectionManager import SelectionManager
-import LogManager
+from DataStructure.MultiselectionManager import SelectionManager
+from DataStructure import LogManager
 class InteractableLabel(QtWidgets.QLabel):
     """
     为QT的Label控件提供响应其他事件的操作
