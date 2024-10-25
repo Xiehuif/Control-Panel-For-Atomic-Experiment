@@ -20,6 +20,12 @@ class HTMLContent:
         self._color = self.Color.black
         self._fontDisplayType = self.DisplayType.Normal
 
+    def _GetOriginalText(self):
+        return self._text
+
+    def _SetOriginalText(self, html):
+        self._text = html
+
     def Clear(self):
         self._text: str = '<p>'
 
@@ -37,10 +43,11 @@ class HTMLContent:
 
     def AppendText(self,text: str):
         targetStr = text
-        # 字符转换
-        targetStr = targetStr.replace('\n', '<br>')
+        # 关键字转换
         targetStr = targetStr.replace('<', ' &lt; ')
         targetStr = targetStr.replace('>', ' &gt; ')
+        # 字符转换
+        targetStr = targetStr.replace('\n', '<br>')
         targetStr = '<font color=' + self._color.value + '>' + targetStr + '</font>'
         if self._fontDisplayType == self.DisplayType.Normal:
             targetStr = targetStr
@@ -52,3 +59,8 @@ class HTMLContent:
 
     def ExportText(self) -> str:
         return self._text + '</p>'
+
+    def Join(self, content):
+        newHTMLContent = HTMLContent()
+        newHTMLContent._SetOriginalText(self.ExportText() + content._GetOriginalText())
+        return newHTMLContent

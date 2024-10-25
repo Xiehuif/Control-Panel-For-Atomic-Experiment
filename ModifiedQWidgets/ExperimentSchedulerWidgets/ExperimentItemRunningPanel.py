@@ -1,3 +1,5 @@
+import cProfile
+
 from PyQt6 import QtWidgets
 
 import MultiprocessSupport.ExperimentProcess

@@ -93,9 +93,10 @@ class RunningButton:
     @staticmethod
     def ExecutionCurrentItems(itemTree: ItemWidgets.ItemTree, runningPanel: ExperimentItemRunningPanel.RunningPanel):
         selectedItems = itemTree.GetSelectedItems()
+        itemTree.SetFrontendEditable(False)
         runningPanel.DispatchExperimentItemFromUI(selectedItems)
         taskManager = MultiprocessSupport.ExperimentProcess.taskManagerInstance
-        taskManager.RunTasks()
+        taskManager.RunTasks(lambda :itemTree.SetFrontendEditable(True))
 
 
 

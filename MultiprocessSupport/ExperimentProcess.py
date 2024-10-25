@@ -11,7 +11,7 @@ from collections import deque
 
 from DataStructure import LogManager
 from DataStructure.ExperimentScheduleManager import ExperimentSchedulerItemDataBase
-
+import cProfile
 
 class ProcessServer:
 
@@ -76,8 +76,10 @@ class ControlProxy:
 
         def run(self):
             while True:
+                self.sleep(1)
                 if not self._logQueue.empty():
-                    self.transferLog.emit(self._logQueue.get())
+                    while not self._logQueue.empty():
+                        self.transferLog.emit(self._logQueue.get())
 
     def __init__(self):
         # 获取设备列表
@@ -93,7 +95,7 @@ class ControlProxy:
         self._logProxy = self.LogProxy(self._logQueue)
         # 配置多线程
         self._logProxy.transferLog.connect(LogManager.LogByLogRecord)
-        self._logProxy.start()
+        self._logProxy.start(QThread.Priority.LowestPriority)
         self._processController.CallFunction(ProcessServer.InitializeDevice.__name__, deviceClassList, "init")
         self._processController.WaitForDone()
         LogManager.Log('Control Proxy Successfully open exp. process', LogManager.LogType.Runtime)
@@ -183,15 +185,15 @@ class TaskRunningThread(QThread):
 
     def _DeviceLoad(self, loadSchedule):
         # self.logOutput.emit('Reset proxy for exp.')
-        self._proxy.Reset()
-        self._proxy.WaitReset()
+        # self._proxy.Reset()
+        # self._proxy.WaitReset()
         # self.logOutput.emit('Resetting finished')
         # self.logOutput.emit('Import schedule')
         self._proxy.ImportSchedule(loadSchedule)
         # self.logOutput.emit('Schedule imported')
         # self.logOutput.emit('Running')
         returnValue = self._proxy.RunDevices()
-        self.logOutput.emit('Finished')
+        # self.logOutput.emit('Finished')
         return returnValue
 
     def _Uninit(self):
@@ -201,7 +203,9 @@ class TaskRunningThread(QThread):
         return
 
     def run(self):
-        # self.logOutput.emit('Experiment Run, loaded length:{}'.format(self._length))
+        self.logOutput.emit('Experiment Run, loaded length:{}'.format(self._length))
+        for i in range(self._length):
+            self.stateChange.emit((i, TaskManager.State.Waiting))
         for i in range(self._length):
             # 检查线程工作状态
             # self.logOutput.emit('Current task number:{}'.format(i))
@@ -239,7 +243,7 @@ class TaskRunningThread(QThread):
             taskData = self._taskDeque.popleft()
             taskIndex = taskData[0]
             schedule = taskData[1]
-            self.stateChange.emit((taskIndex, TaskManager.State.Running))
+            # self.stateChange.emit((taskIndex, TaskManager.State.Running))
             # self.logOutput.emit('Experiment index:{} is started'.format(taskIndex))
             # 分配负载
             returnValue = self._DeviceLoad(schedule)
@@ -303,16 +307,15 @@ class TaskManager:
         # 返回index
         return index
 
-    def RunTasks(self):
-        # 状态汇报
-        for i in range(self._indexAssigned):
-            self.StateChange(i, self.State.Waiting)
+    def RunTasks(self, callback = None):
         # 产生线程，注入依赖
         self._taskThread = TaskRunningThread(self._taskDeque, self._indexAssigned, self._controller)
         if self._stateCallback is not None:
             self._taskThread.stateChange.connect(self._stateCallback, type=Qt.ConnectionType.BlockingQueuedConnection)
         self._taskThread.logOutput.connect(lambda string: LogManager.Log(string, LogManager.LogType.Runtime), type=Qt.ConnectionType.BlockingQueuedConnection)
         self._taskThread.runCallback.connect(lambda dataTuple: (self._callbackDict.get(dataTuple[0]))(dataTuple), type=Qt.ConnectionType.BlockingQueuedConnection)
+        if callback is not None:
+            self._taskThread.finished.connect(callback)
         # 线程启动
         self._taskThread.Start()
 

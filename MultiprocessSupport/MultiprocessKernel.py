@@ -91,11 +91,10 @@ class _WorkProcess(multiprocessing.Process):
         # 主循环
         while self._closeSig.value is False:
             # 检验返回缓存是否为空，如果不是，将返回缓存中的数据全部写入返回值队列，并清空返回值缓存
+            # 缓存只依赖一条队列，因此不需要加锁
             if len(self._retBuf) != 0:
-                self._qLock.acquire()
                 for retList in self._retBuf:
                     self._retQueue.put(retList)
-                self._qLock.release()
                 self._retBuf.clear()
             # 检验任务队列是否为空，如果不是，取出任务到任务缓存
             if not self._tQueue.empty():
@@ -157,17 +156,16 @@ class ProcessController:
         self._blockadeTask = False
         self._retBuf: dict = {}
         self._taskState: dict = {}
+        self._process.daemon = True
         self._process.start()
 
     def _RefreshTasks(self):
-        self._qLock.acquire()
         while not self._retQ.empty():
             buf = self._retQ.get()
             handle = buf[0]
             data = buf[1]
             self._retBuf.update({handle: data})
             self._taskState.update({handle: self.TaskState.Finished})
-        self._qLock.release()
         return
 
     def FindReturnValue(self, handle: str):
