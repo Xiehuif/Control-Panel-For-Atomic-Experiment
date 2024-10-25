@@ -1,3 +1,4 @@
+import cProfile
 import inspect
 import time
 from enum import Enum
@@ -85,6 +86,12 @@ class LogData(SerializationManager.Serializable):
             targetLogList = self.logContentDict.get(logType)
         targetLogList.sort()
         return targetLogList
+
+    def Clear(self):
+        self.logContentDict = {}
+        for logType in LogType:
+            self.logContentDict.update({logType: []})
+        super().__init__()
 
 class _ExperimentLogHandler:
     def __init__(self):

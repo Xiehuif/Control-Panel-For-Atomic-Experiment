@@ -105,8 +105,8 @@ class DemoDevice(DataManager.Device):
 
     def DeviceRun(self):
         LogManager.Log('设备正运行...' + self.deviceName, LogManager.LogType.Experiment)
-        # for waveData in self.deviceSchedule.scheduleData:
-            # LogManager.Log(str(waveData), LogManager.LogType.Experiment)
+        for waveData in self.deviceSchedule.scheduleData:
+            LogManager.Log(str(waveData), LogManager.LogType.Experiment)
 
 # 注册设备
 newDevice = DemoDevice()

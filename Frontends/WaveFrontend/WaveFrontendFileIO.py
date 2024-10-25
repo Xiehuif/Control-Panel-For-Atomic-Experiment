@@ -80,6 +80,7 @@ class LogIO:
             if targetStr is None:
                 return
             # 反序列化
+            logData.Clear()
             logData.Deserialize(targetStr)
         # 触发刷新回调
         if refreshCallBack is not None:

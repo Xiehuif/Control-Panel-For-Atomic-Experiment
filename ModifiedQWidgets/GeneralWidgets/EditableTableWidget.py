@@ -30,10 +30,10 @@ class MulticolumnTree:
     def __init__(self, treeWidget: MenuTreeWidget, headerEnumClass, menuEnumClass):
 
         """
-        此类意在使用一个枚举创造一个列表并用QTableWidget作为前端显示，枚举的每一项的值都将作为列的表。
-        这个列表的每一项可以包含多个允许被QTableWidget显示的项，并以同枚举一一对应的方式显示
+        此类意在使用一个枚举创造一个列表并用QTreeWidget作为前端显示，枚举的每一项的值都将作为列的表。
+        这个列表的每一项可以包含多个允许被QTreeWidget显示的项，并以同枚举一一对应的方式显示
 
-        :param tableWidget: QTableWidget组件的实例
+        :param treeWidget: QTreeWidget组件的实例
         :param headerEnumClass: 用以创建对应组件的枚举类（继承Enum），直接传入类的标识符而非实例
         """
 
@@ -56,6 +56,7 @@ class MulticolumnTree:
             treeHeader.setText(index, headerItem.value)
             self._columnIndexMap.update({headerItem: index})
         self._frontend.setHeaderItem(treeHeader)
+        self._frontend.setUniformRowHeights(True)
 
     def _SetAllLeafNodeSelected(self, nodeItem: QtWidgets.QTreeWidgetItem):
         if nodeItem.childCount() != 0:
@@ -149,10 +150,17 @@ class MulticolumnTree:
             parent.takeChild(index)
             return True
 
-    def SetLayoutPolicyToAdaptContent(self):
+    def SetFrontendEditable(self, isEditable: bool):
         header: QtWidgets.QHeaderView = self._frontend.header()
-        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
-        return
+        if isEditable:
+            header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.ResizeToContents)
+            self._frontend.setSelectionMode(QtWidgets.QTreeWidget.SelectionMode.ExtendedSelection)
+            return
+        else:
+            header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Fixed)
+            self._frontend.setSelectionMode(QtWidgets.QTreeWidget.SelectionMode.NoSelection)
+            return
+
 
     def ClearItems(self):
         self._frontend.clear()

@@ -17,19 +17,20 @@ class BrowserController:
             self._PrintLog(logRecord)
 
     def _PrintLog(self,logRecord: LogManager.LogRecord):
-        self._content.NewParagraph()
+        newContent = HTMLGenerator.HTMLContent()
+        # 新建LogContent
         if self._transparency.get(self.InfoType.File):
-            self._AddFileInfo(self._content, logRecord)
+            self._AddFileInfo(newContent, logRecord)
         if self._transparency.get(self.InfoType.FunctionName):
-            self._AddFunctionName(self._content, logRecord)
+            self._AddFunctionName(newContent, logRecord)
         if self._transparency.get(self.InfoType.Time):
-            self._AddTime(self._content, logRecord)
-        self._AddLogContent(self._content, logRecord)
-        self._ApplyContent()
+            self._AddTime(newContent, logRecord)
+        self._AddLogContent(newContent, logRecord)
+        self._AppendContent(newContent)
         return
 
-    def _ApplyContent(self):
-        self._browser.setHtml(self._content.ExportText())
+    def _AppendContent(self, HTMLText: HTMLGenerator.HTMLContent):
+        self._browser.append(HTMLText.ExportText())
 
     def _InitializeTransparency(self):
         self._transparency.update({self.InfoType.Time: True})
@@ -68,7 +69,6 @@ class BrowserController:
     def __init__(self, browser: QtWidgets.QTextBrowser, logTypeCombobox: QtWidgets.QComboBox, transparencyControlBtn: QtWidgets.QPushButton):
         # 显示组件注册
         self._browser = browser
-        self._content = HTMLGenerator.HTMLContent()
         # 信息可见度
         self._transparency = {}
         self._transparencySettingBtn = transparencyControlBtn
@@ -86,13 +86,12 @@ class BrowserController:
         self.RefreshLogDisplay()
 
     def RefreshLogDisplay(self):
-        self._content.Clear()
+        self._browser.clear()
         logData = LogManager.GetLogData()
         logRecords = logData.GetLogRecords(self._logTypeSelector.itemData(self._logTypeSelector.currentIndex()))
         size = len(logRecords)
-        for i in range(0,size):
+        for i in range(0, size):
             self._PrintLog(logRecords[i])
-        self._ApplyContent()
 
     @staticmethod
     def _AddFileInfo(HTMLContent: HTMLGenerator.HTMLContent, logRecord: LogManager.LogRecord):

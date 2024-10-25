@@ -95,7 +95,7 @@ class ItemTree(EditableTableWidget.MulticolumnTree):
         super().__init__(treeWidget, self.ColumnHead, self.MenuItem)
         self._itemsManager = ExperimentScheduleManager.SchedulerItemManager()
         self._itemsMap: dict = {}
-        self.SetLayoutPolicyToAdaptContent()
+        self.SetFrontendEditable(True)
 
     def ImportRootItem(self, rootItem: ExperimentScheduleManager.ExperimentSchedulerImportedItemData):
         item = rootItem
