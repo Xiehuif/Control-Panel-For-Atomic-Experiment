@@ -1,12 +1,13 @@
 from enum import Enum
 
-import PyQt6.QtCore.Qt
+import PyQt6
+from PyQt6.QtCore import Qt
 from PyQt6.QtCore import QAbstractItemModel, QModelIndex, QVariant
 
 from DataStructure.PyTree import *
 from DataStructure import ExperimentScheduleManager
 
-class ExperimentModel(QAbstractItemModel):
+class PyTreeModel(QAbstractItemModel):
 
     def __init__(self, getTreesCallback, headerEnum, getDataCallback):
         super().__init__(None)
@@ -108,6 +109,9 @@ class ExperimentModel(QAbstractItemModel):
     # 表头展示
 
     def headerData(self, section, orientation, role=None):
-
+        if orientation == PyQt6.QtCore.Qt.Orientation.Horizontal and role == PyQt6.QtCore.Qt.ItemDataRole.DisplayRole:
+            return self._colIndexDict.get(section).value
+        else:
+            return QVariant()
 
 

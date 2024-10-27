@@ -15,16 +15,11 @@ class Ui_SchedulerForm(object):
         SchedulerForm.resize(733, 587)
         self.verticalLayout = QtWidgets.QVBoxLayout(SchedulerForm)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.ScheduleTree = MenuTreeWidget(parent=SchedulerForm)
-        self.ScheduleTree.setSizeAdjustPolicy(QtWidgets.QAbstractScrollArea.SizeAdjustPolicy.AdjustIgnored)
-        self.ScheduleTree.setEditTriggers(QtWidgets.QAbstractItemView.EditTrigger.NoEditTriggers)
-        self.ScheduleTree.setSelectionMode(QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection)
-        self.ScheduleTree.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectionBehavior.SelectRows)
-        self.ScheduleTree.setObjectName("ScheduleTree")
-        self.ScheduleTree.headerItem().setText(0, "1")
-        self.verticalLayout.addWidget(self.ScheduleTree)
         self.EditLayout = QtWidgets.QHBoxLayout()
         self.EditLayout.setObjectName("EditLayout")
+        self.ExperimentView = ItemView(parent=SchedulerForm)
+        self.ExperimentView.setObjectName("ExperimentView")
+        self.EditLayout.addWidget(self.ExperimentView)
         self.verticalLayout.addLayout(self.EditLayout)
         self.InteractiveLayout = QtWidgets.QHBoxLayout()
         self.InteractiveLayout.setObjectName("InteractiveLayout")
@@ -118,5 +113,4 @@ class Ui_SchedulerForm(object):
         self.ExportToFileBtn.setText(_translate("SchedulerForm", "导出到文件"))
         self.ScanArgBtn.setText(_translate("SchedulerForm", "扫描所选项目"))
         self.InitBtn.setText(_translate("SchedulerForm", "启动"))
-
-from ModifiedQWidgets.GeneralWidgets.EditableTableWidget import MenuTreeWidget
+from ModifiedQWidgets.ExperimentSchedulerWidgets.ExperimentItemView import ItemView
