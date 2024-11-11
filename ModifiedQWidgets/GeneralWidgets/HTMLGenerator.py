@@ -16,24 +16,26 @@ class HTMLContent:
         Italic = 2
 
     def __init__(self):
-        self._text: str = '<p>'
+        # self._text: str = '<p>'
+        self._textList = ['<p>']
         self._color = self.Color.black
         self._fontDisplayType = self.DisplayType.Normal
 
     def _GetOriginalText(self):
-        return self._text
+        return ''.join(self._textList)
 
     def _SetOriginalText(self, html):
-        self._text = html
+        self._textList.clear()
+        self._textList.append(html)
 
     def Clear(self):
-        self._text: str = '<p>'
+        self._textList = ['<p>']
 
     def NewLine(self):
-        self._text = self._text + '<br>'
+        self._textList.append('<br>')
 
     def NewParagraph(self):
-        self._text = self._text + '</p><p>'
+        self._textList.append('</p><p>')
 
     def SetColor(self,color: Color):
         self._color = color
@@ -48,17 +50,19 @@ class HTMLContent:
         targetStr = targetStr.replace('>', ' &gt; ')
         # 字符转换
         targetStr = targetStr.replace('\n', '<br>')
-        targetStr = '<font color=' + self._color.value + '>' + targetStr + '</font>'
+        # targetStr = '<font color=' + self._color.value + '>' + targetStr + '</font>'
+        # self._textList.extend(('<font color=', self._color.value, '>', targetStr, '</font>'))
         if self._fontDisplayType == self.DisplayType.Normal:
-            targetStr = targetStr
+            self._textList.extend(('<font color=', self._color.value, '>', targetStr, '</font>'))
         elif self._fontDisplayType == self.DisplayType.Bold:
-            targetStr = '<b>' + targetStr + '</b>'
+            # targetStr = '<b>' + targetStr + '</b>'
+            self._textList.extend(('<b>', '<font color=', self._color.value, '>', targetStr, '</font>', '</b>'))
         elif self._fontDisplayType == self.DisplayType.Italic:
-            targetStr = '<i>' + targetStr + '</i>'
-        self._text = self._text + targetStr
+            # targetStr = '<i>' + targetStr + '</i>'
+            self._textList.extend(('<i>', '<font color=', self._color.value, '>', targetStr, '</font>', '</i>'))
 
     def ExportText(self) -> str:
-        return self._text + '</p>'
+        return ''.join(self._textList) + '</p>'
 
     def Join(self, content):
         newHTMLContent = HTMLContent()

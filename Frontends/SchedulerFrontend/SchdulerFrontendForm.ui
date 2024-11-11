@@ -15,28 +15,11 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="MenuTreeWidget" name="ScheduleTree">
-     <property name="sizeAdjustPolicy">
-      <enum>QAbstractScrollArea::AdjustIgnored</enum>
-     </property>
-     <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
-     <property name="selectionMode">
-      <enum>QAbstractItemView::ExtendedSelection</enum>
-     </property>
-     <property name="selectionBehavior">
-      <enum>QAbstractItemView::SelectRows</enum>
-     </property>
-     <column>
-      <property name="text">
-       <string notr="true">1</string>
-      </property>
-     </column>
-    </widget>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="EditLayout"/>
+    <layout class="QHBoxLayout" name="EditLayout">
+     <item>
+      <widget class="ItemView" name="ExperimentView"/>
+     </item>
+    </layout>
    </item>
    <item>
     <layout class="QHBoxLayout" name="InteractiveLayout" stretch="0,0,0,0,0">
@@ -167,9 +150,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>MenuTreeWidget</class>
-   <extends>QTreeWidget</extends>
-   <header>EditableTableWidget</header>
+   <class>ItemView</class>
+   <extends>QTreeView</extends>
+   <header>ModifiedQWidgets.ExperimentSchedulerWidgets.ExperimentItemView</header>
   </customwidget>
  </customwidgets>
  <resources/>

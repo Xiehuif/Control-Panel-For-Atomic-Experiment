@@ -1,14 +1,21 @@
 from enum import Enum
 
-import PyQt6.QtCore.Qt
+import PyQt6
+from PyQt6.QtCore import Qt
 from PyQt6.QtCore import QAbstractItemModel, QModelIndex, QVariant
 
 from DataStructure.PyTree import *
 from DataStructure import ExperimentScheduleManager
 
-class ExperimentModel(QAbstractItemModel):
+class PyTreeModel(QAbstractItemModel):
 
     def __init__(self, getTreesCallback, headerEnum, getDataCallback):
+        """
+        初始化
+        :param getTreesCallback: 获取Tree列表的回调
+        :param headerEnum: 获取header的Enum
+        :param getDataCallback: 获取列表数据的回调，headerEnum的成员是key，而内容是value
+        """
         super().__init__(None)
         self._getTrees = getTreesCallback
         self._headerEnum: type[Enum] = headerEnum
@@ -18,8 +25,9 @@ class ExperimentModel(QAbstractItemModel):
         for enumItem in self._headerEnum:
             self._colIndexDict.update({self._colCount: enumItem})
             self._colCount += 1
+        self._nodeIndexDict: dict = {}
 
-    def _isRoot(self, parent):
+    def _IsRoot(self, parent):
         parentIndex: None | QModelIndex = parent
         if parentIndex is None:
             return True
@@ -28,21 +36,38 @@ class ExperimentModel(QAbstractItemModel):
         else:
             return True
 
+    def _WriteBuffer(self, node: TreeNode, column: int, value: str):
+        targetStringDict = self._CheckBuffer(node)
+        headerItem = self._colIndexDict.get(column)
+        targetStringDict.update({headerItem: value})
+
     # 行列数据
 
     def columnCount(self, parent=None, *args, **kwargs):
         return self._colCount
 
     def rowCount(self, parent=None, *args, **kwargs):
-        isRoot = self._isRoot(parent)
+        isRoot = self._IsRoot(parent)
         if isRoot:
-            return len(self._getTrees())
+            rC = len(self._getTrees())
+            return rC
         else:
             parentIndex: None | QModelIndex = parent
             treeNode: TreeNode = parentIndex.internalPointer()
-            return len(treeNode.GetChildren())
+            rC = len(treeNode.GetChildren())
+            return rC
 
     # 获取索引
+
+    def hasChildren(self, parent=None, *args, **kwargs):
+        if parent is None:
+            return (len(self._getTrees()) != 0)
+        elif not parent.isValid():
+            return (len(self._getTrees()) != 0)
+        else:
+            parentIndex: QModelIndex = parent
+            parentNode: TreeNode = parentIndex.internalPointer()
+            return len(parentNode.GetChildren()) != 0
 
     def parent(self, child=None):
         if child is None:
@@ -71,7 +96,9 @@ class ExperimentModel(QAbstractItemModel):
 
 
     def index(self, row, column, parent=None, *args, **kwargs):
-        isRoot = self._isRoot(parent)
+        isRoot = self._IsRoot(parent)
+        if parent is None:
+            parent = QModelIndex()
         if not self.hasIndex(row, column, parent):
             return QModelIndex()
         if isRoot:
@@ -84,6 +111,23 @@ class ExperimentModel(QAbstractItemModel):
             return self.createIndex(row, column, parentNode.GetChildren()[row])
 
     # 数据操作
+    def setData(self, index, value, role=None):
+        treeIndex: None | QModelIndex = index
+        if treeIndex is None:
+            return False
+        if not treeIndex.isValid():
+            return False
+        targetTreeNode: TreeNode = treeIndex.internalPointer()
+        if targetTreeNode is None:
+            raise ValueError('Node doesn\'t exist')
+        if role == PyQt6.QtCore.Qt.ItemDataRole.DisplayRole:
+            self._WriteBuffer(targetTreeNode, treeIndex.column(), value)
+            self.dataChanged.emit(index, index, role)
+        elif role == PyQt6.QtCore.Qt.ItemDataRole.UserRole:
+            targetTreeNode.SetData(value)
+            self.dataChanged.emit(index, index, role)
+        else:
+            return False
 
     def data(self, index, role=None):
         treeIndex: None | QModelIndex = index
@@ -93,9 +137,7 @@ class ExperimentModel(QAbstractItemModel):
             return QVariant
         targetTreeNode: TreeNode = treeIndex.internalPointer()
         if role == PyQt6.QtCore.Qt.ItemDataRole.DisplayRole:
-            targetStringDict: dict = self._dataCallback(targetTreeNode)
-            targetEnum = self._colIndexDict.get(treeIndex.column())
-            return targetStringDict.get(targetEnum)
+            return self._dataCallback(targetTreeNode, self._colIndexDict.get(treeIndex.column()))
         if role == PyQt6.QtCore.Qt.ItemDataRole.UserRole:
             return targetTreeNode.GetData()
         return QVariant()
@@ -108,6 +150,9 @@ class ExperimentModel(QAbstractItemModel):
     # 表头展示
 
     def headerData(self, section, orientation, role=None):
-
+        if orientation == PyQt6.QtCore.Qt.Orientation.Horizontal and role == PyQt6.QtCore.Qt.ItemDataRole.DisplayRole:
+            return self._colIndexDict.get(section).value
+        else:
+            return QVariant()
 
 

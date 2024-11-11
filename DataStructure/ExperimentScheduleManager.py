@@ -3,8 +3,12 @@ import enum
 import json
 from abc import ABC, abstractmethod
 
+from PyQt6.QtCore import Qt
+
+import MultiprocessSupport.ExperimentProcess
 from DataStructure import LogManager, SerializationManager, DataManager
 from DataStructure.PyTree import TreeNode, Tree, NodeData
+from DataStructure.PyTreeModelForQt import PyTreeModel
 
 
 class SchedulerItemType(enum.Enum):
@@ -12,13 +16,52 @@ class SchedulerItemType(enum.Enum):
     Derived = 'Derived'
 
 
+class DisplayHeader(enum.Enum):
+    Name = '任务名称'
+    Source = '任务来源'
+    Depth = '深度'
+    ScannedDevice = '扫描设备'
+    ScannedIndex = '波形所在索引'
+    ScannedParameterType = '扫描参数'
+    Value = '值'
+    ScheduledMinimumTime = '计划最小用时'
+    RunningState = '运行状态'
+
+
 class ExperimentSchedulerItemDataBase(SerializationManager.Serializable, NodeData):
+
+    def SetRunningState(self, state: MultiprocessSupport.ExperimentProcess.TaskManager.State):
+        if isinstance(state, MultiprocessSupport.ExperimentProcess.TaskManager.State):
+            self._currentState = state
+        else:
+            raise TypeError
+
+    def GetRunningStateDescriptionText(self, state: MultiprocessSupport.ExperimentProcess.TaskManager.State):
+        if state == MultiprocessSupport.ExperimentProcess.TaskManager.State.Uninitiated:
+            return '等待用户操作'
+        elif state == MultiprocessSupport.ExperimentProcess.TaskManager.State.Excluded:
+            return '不在运行范围内'
+        elif state == MultiprocessSupport.ExperimentProcess.TaskManager.State.Running:
+            return '运行中'
+        elif state == MultiprocessSupport.ExperimentProcess.TaskManager.State.Waiting:
+            return '等待运行'
+        elif state == MultiprocessSupport.ExperimentProcess.TaskManager.State.Finished:
+            return '已完成'
+        else:
+            return 'UNKNOWN STATE'
 
     def __init__(self, attachedNode: TreeNode = None, name: str = 'Unknown'):
         SerializationManager.Serializable.__init__(self)
         NodeData.__init__(self, attachedNode)
         self._attachedNode: TreeNode = attachedNode
         self.name = name
+        self._currentState = MultiprocessSupport.ExperimentProcess.TaskManager.State.Uninitiated
+
+    def GetDescriptionString(self, header: DisplayHeader) -> str:
+        if header == DisplayHeader.RunningState:
+            return self.GetRunningStateDescriptionText(self._currentState)
+        else:
+            return 'UNDEFINED'
 
     def GetName(self) -> str:
         return self.name
@@ -43,6 +86,33 @@ class ExperimentSchedulerItemDataBase(SerializationManager.Serializable, NodeDat
 
 
 class ExperimentSchedulerDerivedItemData(ExperimentSchedulerItemDataBase):
+
+    def GetDescriptionString(self, header: DisplayHeader) -> str:
+        """
+        对这个Item的数据打表，返回的字符串是对应的描述数据
+        :param header: 对应的表头
+        :return: 描述数据
+        """
+        if header == DisplayHeader.Name:
+            return self.GetName()
+        elif header == DisplayHeader.Depth:
+            return str(self.GetAttachedNode().GetDepth())
+        elif header == DisplayHeader.Source:
+            # NodeData is also an instance of ExperimentSchedulerItemDataBase
+            return self.GetAttachedNode().GetParent().GetData().GetName()
+        elif header == DisplayHeader.ScannedDevice:
+            return self.deviceName
+        elif header == DisplayHeader.ScannedIndex:
+            return str(self.targetWaveIndex)
+        elif header == DisplayHeader.ScannedParameterType:
+            return self.targetParameterItem.value[0]
+        elif header == DisplayHeader.Value:
+            return str(self.appliedValue)
+        elif header == DisplayHeader.ScheduledMinimumTime:
+            # TODO
+            return str(0)
+        else:
+            return super().GetDescriptionString(header)
 
     def GetData(self, deviceDatas: dict):
         # 初始化
@@ -202,7 +272,53 @@ class ExperimentSchedulerImportedItemData(ExperimentSchedulerItemDataBase):
         for device in devices:
             device.deviceSchedule.CopyFromSchedule(self._copiedScheduleDict.get(device))
 
-class SchedulerItemManager(SerializationManager.Serializable):
+    def GetDescriptionString(self, header: DisplayHeader) -> str:
+        if header == DisplayHeader.Name:
+            return self.GetName()
+        elif header == DisplayHeader.Source:
+            return 'User'
+        elif header == DisplayHeader.Depth:
+            return '0'
+        elif header == DisplayHeader.ScannedIndex:
+            return 'None'
+        elif header == DisplayHeader.ScannedDevice:
+            return 'Root'
+        elif header == DisplayHeader.ScannedParameterType:
+            return 'None'
+        elif header == DisplayHeader.Value:
+            return 'Default'
+        elif header == DisplayHeader.ScheduledMinimumTime:
+            return '0'
+        else:
+            return super().GetDescriptionString(header)
+
+class SchedulerItemManager(SerializationManager.Serializable, PyTreeModel):
+
+    # 刷新
+    def Clear(self):
+        self.treeList.clear()
+
+    # Serializable 重载
+    def Serialize(self, encoder:json.JSONEncoder = json.JSONEncoder()) -> str:
+        dataList = []
+        for index in range(len(self.treeList)):
+            tree: Tree = self.treeList[index]
+            treeString = tree.Serialize()
+            dataList.append(treeString)
+        dataString = json.dumps(dataList)
+        return dataString
+
+    def Deserialize(self, jsonContext :str|None):
+        self.Clear()
+        dataList = json.loads(jsonContext)
+        for index in range(len(dataList)):
+            tree: Tree = Tree()
+            tree.Deserialize(dataList[index])
+            self.treeList.append(tree)
+
+    # 数据关联
+    def RegisterModelDisplay(self, headerEnum: type[enum.Enum], dataCallback):
+        PyTreeModel.__init__(self, lambda: self.treeList, headerEnum, dataCallback)
 
     def GetTrees(self):
         newList = []
@@ -219,7 +335,8 @@ class SchedulerItemManager(SerializationManager.Serializable):
     def ImportRootItem(self, item: ExperimentSchedulerImportedItemData) -> TreeNode:
         newTree = Tree()
         self.treeList.append(newTree)
-        newTree.GetNodeByIndex(0).SetData(item)
+        newNode = newTree.GetNodeByIndex(0)
+        newNode.SetData(item)
         return newTree.GetNodeByIndex(0)
 
     def ImportDerivedItem(self, parentNode: TreeNode, newItem: ExperimentSchedulerDerivedItemData) -> TreeNode:
