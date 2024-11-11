@@ -31,31 +31,30 @@ class BrowserController:
             logRecords = self._logRecords
             newContent = HTMLGenerator.HTMLContent()
             for i in range(len(logRecords)):
-                # 新建LogContent
-                newContent = self._controller.CreateContent(logRecords[i])
+                self._controller.CreateContent(newContent, logRecords[i])
                 if i % 10 == 0:
-                    self.appendText.emit(newContent)
-                    newContent = HTMLGenerator.HTMLContent()
+                    self.appendText.emit(newContent.ExportText())
+                    newContent.Clear()
+                    self.msleep(100)
                 else:
                     newContent.NewParagraph()
-            self.appendText.emit(newContent)
+            self.appendText.emit(newContent.ExportText())
 
     def _PrintLog(self, logRecord: LogManager.LogRecord):
-        newContent = self.CreateContent(logRecord)
+        newContent = HTMLGenerator.HTMLContent()
+        self.CreateContent(newContent, logRecord)
         self._AppendContent(newContent)
         return
 
-    def CreateContent(self, logRecord: LogManager.LogRecord):
-        newContent = HTMLGenerator.HTMLContent()
-        # 新建LogContent
+    def CreateContent(self, content: HTMLGenerator.HTMLContent, logRecord: LogManager.LogRecord):
         if self._transparency.get(self.InfoType.File):
-            self._AddFileInfo(newContent, logRecord)
+            self._AddFileInfo(content, logRecord)
         if self._transparency.get(self.InfoType.FunctionName):
-            self._AddFunctionName(newContent, logRecord)
+            self._AddFunctionName(content, logRecord)
         if self._transparency.get(self.InfoType.Time):
-            self._AddTime(newContent, logRecord)
-        self._AddLogContent(newContent, logRecord)
-        return newContent
+            self._AddTime(content, logRecord)
+        self._AddLogContent(content, logRecord)
+        return content
 
     def _AppendContent(self, HTMLText: HTMLGenerator.HTMLContent):
         self._browser.append(HTMLText.ExportText())
@@ -118,12 +117,12 @@ class BrowserController:
 
     def RefreshLogDisplay(self):
         if self._refreshThread is not None:
-            self._refreshThread.wait()
+            self._refreshThread.quit()
         self._browser.clear()
         logData = LogManager.GetLogData()
         logRecords = logData.GetLogRecords(self._logTypeSelector.itemData(self._logTypeSelector.currentIndex()))
         self._refreshThread = self._LoadingLogThread(logRecords, self)
-        self._refreshThread.appendText.connect(self._AppendContent)
+        self._refreshThread.appendText.connect(self._browser.append)
         self._refreshThread.start()
 
     @staticmethod
