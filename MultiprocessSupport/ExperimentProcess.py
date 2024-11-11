@@ -10,7 +10,7 @@ import MultiprocessSupport.MultiprocessKernel
 from collections import deque
 
 from DataStructure import LogManager
-from DataStructure.ExperimentScheduleManager import ExperimentSchedulerItemDataBase
+
 import cProfile
 
 class ProcessServer:
@@ -243,7 +243,7 @@ class TaskRunningThread(QThread):
             taskData = self._taskDeque.popleft()
             taskIndex = taskData[0]
             schedule = taskData[1]
-            # self.stateChange.emit((taskIndex, TaskManager.State.Running))
+            self.stateChange.emit((taskIndex, TaskManager.State.Running))
             # self.logOutput.emit('Experiment index:{} is started'.format(taskIndex))
             # 分配负载
             returnValue = self._DeviceLoad(schedule)
@@ -293,7 +293,13 @@ class TaskManager:
         self._indexAssigned = 0
         self._taskThread = None
 
-    def PutTask(self, item: ExperimentSchedulerItemDataBase, callback) -> int:
+    def PutTask(self, item, callback) -> int:
+        """
+        置入任务
+        :param item: ExperimentSchedulerItemDataBase类型，数据来源
+        :param callback: 完成后调用的回调
+        :return:
+        """
         # 加长
         index = self._indexAssigned
         self._indexAssigned += 1

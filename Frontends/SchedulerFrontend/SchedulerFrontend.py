@@ -17,7 +17,7 @@ class ExperimentScheduler(QtWidgets.QWidget, SchdulerFrontendForm.Ui_SchedulerFo
         LogManager.Log('Scheduler initialized', LogManager.LogType.Runtime)
 
         # 控件初始化
-        self.itemTable = ItemWidgets.ItemTree(form.ExperimentView)
+        self.itemTable = ItemWidgets.ExperimentScheduleItemTree(form.ExperimentView)
         self.runningPanel = ExperimentItemRunningPanel.RunningPanel(self.itemTable, form.ExecutionProgressBar)
 
         # 辅助量

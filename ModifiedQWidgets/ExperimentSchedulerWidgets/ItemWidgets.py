@@ -2,76 +2,19 @@ import copy
 from enum import Enum, IntEnum, StrEnum
 
 from PyQt6 import QtWidgets
+from PyQt6.QtCore import QModelIndex
+from PyQt6.QtWidgets import QTreeView
 
 import MultiprocessSupport.ExperimentProcess
 from DataStructure import DataManager, ExperimentScheduleManager, LogManager, ParameterGeneratorsManager
 import ModifiedQWidgets.GeneralWidgets.EditableTableWidget as EditableTableWidget
 import ModifiedQWidgets.GeneralWidgets.ParameterAcquireDialog as ParameterAcquireDialog
 from DataStructure.PyTree import TreeNode, Tree
+from ModifiedQWidgets.ExperimentSchedulerWidgets import ExperimentItemView
+from ModifiedQWidgets.ExperimentSchedulerWidgets.ExperimentItemView import ItemView
 
 
-class ItemTree(EditableTableWidget.MulticolumnTree):
-
-    def _GenerateWidgetItemData(self, item: ExperimentScheduleManager.ExperimentSchedulerItemDataBase) -> dict:
-        """
-        依照类型生成表格数据
-
-        :param item: 实验数据项
-        :return: WidgetItem所需的data参数
-        """
-        data = None
-        if isinstance(item, ExperimentScheduleManager.ExperimentSchedulerDerivedItemData):
-            itemName = item.GetName()
-            source = item.GetAttachedNode().GetParent().GetData().GetName()
-            depth = item.GetAttachedNode().GetDepth()
-            scannedDevice = item.deviceName
-            scannedIndex = item.targetWaveIndex
-            scannedType = item.targetParameterItem.value[0]
-            value = item.appliedValue
-            time = 0
-            # time = GetTime()
-            data = {
-                self.ColumnHead.Name: itemName,
-                self.ColumnHead.Source: source,
-                self.ColumnHead.Depth: str(depth),
-                self.ColumnHead.ScannedDevice: scannedDevice,
-                self.ColumnHead.ScannedIndex: str(scannedIndex),
-                self.ColumnHead.ScannedParameterType: scannedType,
-                self.ColumnHead.Value: str(value),
-                self.ColumnHead.ScheduledMinimumTime: str(time)
-            }
-        elif isinstance(item, ExperimentScheduleManager.ExperimentSchedulerImportedItemData):
-            name = item.GetName()
-            data = {
-                self.ColumnHead.Name: name,
-                self.ColumnHead.Source: 'User',
-                self.ColumnHead.Depth: '0',
-                self.ColumnHead.ScannedDevice: 'Root',
-                self.ColumnHead.ScannedIndex: 'None',
-                self.ColumnHead.ScannedParameterType: 'None',
-                self.ColumnHead.Value: 'Default',
-                self.ColumnHead.ScheduledMinimumTime: '0'
-                # TODO: self.ColumnHead.ScheduledMinimumTime: str(GetTime())
-            }
-        else:
-            raise TypeError('Unexpected type of item when try to generate widget data in ItemTree')
-        return data
-
-    def ChangeRunningState(self, item: QtWidgets.QTreeWidgetItem,
-                           state: MultiprocessSupport.ExperimentProcess.TaskManager.State):
-        index = self.GetColumnIndex(self.ColumnHead.RunningState)
-        respondText = None
-        if state == MultiprocessSupport.ExperimentProcess.TaskManager.State.Uninitiated:
-            respondText = '等待用户操作'
-        if state == MultiprocessSupport.ExperimentProcess.TaskManager.State.Excluded:
-            respondText = '不在运行范围内'
-        if state == MultiprocessSupport.ExperimentProcess.TaskManager.State.Running:
-            respondText = '运行中'
-        if state == MultiprocessSupport.ExperimentProcess.TaskManager.State.Waiting:
-            respondText = '等待运行'
-        if state == MultiprocessSupport.ExperimentProcess.TaskManager.State.Finished:
-            respondText = '已完成'
-        item.setText(index, respondText)
+class ExperimentScheduleItemTree:
 
     class MenuItem(StrEnum):
         Delete = '删除'
@@ -80,38 +23,46 @@ class ItemTree(EditableTableWidget.MulticolumnTree):
         Paste = '粘贴'
         SelectLeafItems = '选中所有终端项'
 
-    class ColumnHead(Enum):
-        Name = '任务名称'
-        Source = '任务来源'
-        Depth = '深度'
-        ScannedDevice = '扫描设备'
-        ScannedIndex = '波形所在索引'
-        ScannedParameterType = '扫描参数'
-        Value = '值'
-        ScheduledMinimumTime = '计划最小用时'
-        RunningState = '运行状态'
+    def _GetDiscription(self, node, header):
+        item: ExperimentScheduleManager.ExperimentSchedulerItemDataBase = node.GetData()
+        return item.GetDescriptionString(header)
 
-    def __init__(self, treeWidget: EditableTableWidget.MenuTreeWidget):
-        super().__init__(treeWidget, self.ColumnHead, self.MenuItem)
+    def __init__(self, itemView: ItemView):
         self._itemsManager = ExperimentScheduleManager.SchedulerItemManager()
-        self._itemsMap: dict = {}
-        self.SetFrontendEditable(True)
+        self._itemsManager.RegisterModelDisplay(ExperimentScheduleManager.DisplayHeader, self._GetDiscription)
+        self._view = itemView
+        self._view.setModel(self._itemsManager)
+
+    def GetSelectedNodes(self) -> list[TreeNode]:
+        selectedIndexes: list[QModelIndex] = self._view.selectedIndexes()
+        targetNodes: list[TreeNode] = []
+        for index in selectedIndexes:
+            if index.column() != 0:
+                continue
+            else:
+                targetNodes.append(index.internalPointer())
+        return targetNodes
+
+    def GetViewWidget(self) -> ItemView:
+        return self._view
 
     def ImportRootItem(self, rootItem: ExperimentScheduleManager.ExperimentSchedulerImportedItemData):
         item = rootItem
-        data = self._GenerateWidgetItemData(rootItem)
+        # data = self._GenerateWidgetItemData(rootItem)
         newNode = self._itemsManager.ImportRootItem(item)
         item.SetAttachedNode(newNode)
-        newTreeWidgetItem = self.InsertItem(data, None, newNode)
-        self._itemsMap.update({newNode: newTreeWidgetItem})
+        self._view.doItemsLayout()
+        # newTreeWidgetItem = self.InsertItem(data, None, newNode)
+        # self._itemsMap.update({newNode: newTreeWidgetItem})
 
     def InsertDerivedItems(self, parentNode: TreeNode, items: list[ExperimentScheduleManager.ExperimentSchedulerDerivedItemData]):
         for item in items:
             copiedItem = copy.deepcopy(item)
-            newNode = self._itemsManager.ImportDerivedItem(parentNode, copiedItem)
-            data = self._GenerateWidgetItemData(copiedItem)
-            newTreeWidgetItem = self.InsertItem(data, self._itemsMap.get(newNode.GetParent()), newNode)
-            self._itemsMap.update({newNode: newTreeWidgetItem})
+            self._itemsManager.ImportDerivedItem(parentNode, copiedItem)
+        self._view.doItemsLayout()
+            # data = self._GenerateWidgetItemData(copiedItem)
+            # newTreeWidgetItem = self.InsertItem(data, self._itemsMap.get(newNode.GetParent()), newNode)
+            # self._itemsMap.update({newNode: newTreeWidgetItem})
 
     def GetTreeWidgetItemByTreeNode(self, treeNode: TreeNode) -> QtWidgets.QTreeWidgetItem:
         return self._itemsMap.get(treeNode)
@@ -155,15 +106,15 @@ class ItemTree(EditableTableWidget.MulticolumnTree):
         if treeFlag and widgetFlag:
             return True
         elif treeFlag is True:
-            LogManager.Log('ItemTree: this content exist in Qt widget but not exist in backend, you might check '
+            LogManager.Log('ExperimentScheduleItemTree: this content exist in Qt widget but not exist in backend, you might check '
                            'how this report be printed', LogManager.LogType.Error)
             return False
         elif widgetFlag is True:
-            LogManager.Log('ItemTree: this content exist in Qt widget but not exist in backend, you might check '
+            LogManager.Log('ExperimentScheduleItemTree: this content exist in Qt widget but not exist in backend, you might check '
                            'how this report be printed', LogManager.LogType.Error)
             return False
         elif (not treeFlag) and (not widgetFlag):
-            LogManager.Log('ItemTree: this content does not exist in neither Qt widget nor backend, you might '
+            LogManager.Log('ExperimentScheduleItemTree: this content does not exist in neither Qt widget nor backend, you might '
                            'check how this report be printed', LogManager.LogType.Error)
             return False
 

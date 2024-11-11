@@ -1,5 +1,7 @@
 from enum import Enum
 from PyQt6 import QtWidgets
+from PyQt6.QtCore import QThread, pyqtSignal
+
 import ModifiedQWidgets.GeneralWidgets.CheckSelectionWidget as CheckSelectionWidget
 import ModifiedQWidgets.GeneralWidgets.HTMLGenerator as HTMLGenerator
 from DataStructure import LogManager
@@ -12,11 +14,38 @@ class BrowserController:
         FunctionName = '函数名'
         Time = '时间'
 
-    def _ReceiveNewLog(self,logRecord: LogManager.LogRecord):
+    def _ReceiveNewLog(self, logRecord: LogManager.LogRecord):
         if self._LogTypeFilter(logRecord.type):
             self._PrintLog(logRecord)
 
-    def _PrintLog(self,logRecord: LogManager.LogRecord):
+    class _LoadingLogThread(QThread):
+
+        appendText = pyqtSignal(object)
+
+        def __init__(self, logRecords: list[LogManager.LogRecord], controller):
+            super().__init__()
+            self._logRecords = logRecords
+            self._controller: BrowserController = controller
+
+        def run(self):
+            logRecords = self._logRecords
+            newContent = HTMLGenerator.HTMLContent()
+            for i in range(len(logRecords)):
+                # 新建LogContent
+                newContent = self._controller.CreateContent(logRecords[i])
+                if i % 10 == 0:
+                    self.appendText.emit(newContent)
+                    newContent = HTMLGenerator.HTMLContent()
+                else:
+                    newContent.NewParagraph()
+            self.appendText.emit(newContent)
+
+    def _PrintLog(self, logRecord: LogManager.LogRecord):
+        newContent = self.CreateContent(logRecord)
+        self._AppendContent(newContent)
+        return
+
+    def CreateContent(self, logRecord: LogManager.LogRecord):
         newContent = HTMLGenerator.HTMLContent()
         # 新建LogContent
         if self._transparency.get(self.InfoType.File):
@@ -26,8 +55,7 @@ class BrowserController:
         if self._transparency.get(self.InfoType.Time):
             self._AddTime(newContent, logRecord)
         self._AddLogContent(newContent, logRecord)
-        self._AppendContent(newContent)
-        return
+        return newContent
 
     def _AppendContent(self, HTMLText: HTMLGenerator.HTMLContent):
         self._browser.append(HTMLText.ExportText())
@@ -66,9 +94,12 @@ class BrowserController:
     def SetTransparency(self, infoType: InfoType, isVisible: bool):
         self._transparency.update({infoType: isVisible})
 
-    def __init__(self, browser: QtWidgets.QTextBrowser, logTypeCombobox: QtWidgets.QComboBox, transparencyControlBtn: QtWidgets.QPushButton):
+    def __init__(self, browser: QtWidgets.QTextBrowser,
+                 logTypeCombobox: QtWidgets.QComboBox, transparencyControlBtn: QtWidgets.QPushButton):
         # 显示组件注册
         self._browser = browser
+        # 多线程
+        self._refreshThread: BrowserController._LoadingLogThread | None = None
         # 信息可见度
         self._transparency = {}
         self._transparencySettingBtn = transparencyControlBtn
@@ -86,12 +117,14 @@ class BrowserController:
         self.RefreshLogDisplay()
 
     def RefreshLogDisplay(self):
+        if self._refreshThread is not None:
+            self._refreshThread.wait()
         self._browser.clear()
         logData = LogManager.GetLogData()
         logRecords = logData.GetLogRecords(self._logTypeSelector.itemData(self._logTypeSelector.currentIndex()))
-        size = len(logRecords)
-        for i in range(0, size):
-            self._PrintLog(logRecords[i])
+        self._refreshThread = self._LoadingLogThread(logRecords, self)
+        self._refreshThread.appendText.connect(self._AppendContent)
+        self._refreshThread.start()
 
     @staticmethod
     def _AddFileInfo(HTMLContent: HTMLGenerator.HTMLContent, logRecord: LogManager.LogRecord):
