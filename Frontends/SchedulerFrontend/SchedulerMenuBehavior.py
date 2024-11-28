@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import QTreeWidgetItem
 
 from DataStructure import ExperimentScheduleManager, LogManager
 from Frontends.SchedulerFrontend import SchedulerFrontend
-from ModifiedQWidgets.ExperimentSchedulerWidgets.ItemWidgets import ExperimentScheduleItemTree
+from ModifiedQWidgets.ExperimentSchedulerWidgets.ExperimentItemView import ItemView
 from DataStructure.PyTree import TreeNode, Tree
 
 class SchedulerMenuBehavior:
@@ -66,10 +66,12 @@ class SchedulerMenuBehavior:
         return copiedFromTree, target
 
     @staticmethod
-    def DeleteSelectedItems(itemTree: ExperimentScheduleItemTree):
-        selectedItems = itemTree.GetSelectedItems()
-        for item in selectedItems:
-            itemTree.DeleteItem(item)
+    def DeleteSelectedItems(itemView: ItemView):
+        selectedIndexes = itemView.selectedIndexes()
+        for index in selectedIndexes:
+            if index.column() != 0:
+                continue
+            itemView.DeleteItem(index)
 
     @staticmethod
     def CopySelectedItems(parentWidget: SchedulerFrontend.ExperimentScheduler):
@@ -148,18 +150,17 @@ class SchedulerMenuBehavior:
         parentWidget.itemTable.SelectAllLeafItem()
 
     @staticmethod
-    def MenuEntrance(menuItem: ExperimentScheduleItemTree.MenuItem, schedulerWidget):
+    def MenuEntrance(menuItem: ItemView.MenuItem, itemTree):
         LogManager.Log('SchedulerMenuBehavior got callback menu item:{}'.format(menuItem), LogManager.LogType.Runtime)
-        if menuItem == ExperimentScheduleItemTree.MenuItem.Delete:
-            itemTree = schedulerWidget.itemTable
+        if menuItem == ItemView.MenuItem.Delete:
             SchedulerMenuBehavior.DeleteSelectedItems(itemTree)
-        elif menuItem == ExperimentScheduleItemTree.MenuItem.Copy:
-            SchedulerMenuBehavior.CopySelectedItems(schedulerWidget)
-        elif menuItem == ExperimentScheduleItemTree.MenuItem.Cut:
-            SchedulerMenuBehavior.SliceSelectedItems(schedulerWidget)
-        elif menuItem == ExperimentScheduleItemTree.MenuItem.Paste:
+        elif menuItem == ItemView.MenuItem.Copy:
+            SchedulerMenuBehavior.CopySelectedItems(itemTree)
+        elif menuItem == ItemView.MenuItem.Cut:
+            SchedulerMenuBehavior.SliceSelectedItems(itemTree)
+        elif menuItem == ItemView.MenuItem.Paste:
             SchedulerMenuBehavior.PasteCopiedItems(schedulerWidget)
-        elif menuItem == ExperimentScheduleItemTree.MenuItem.SelectLeafItems:
+        elif menuItem == ItemView.MenuItem.SelectLeafItems:
             SchedulerMenuBehavior.SelectLeafItems(schedulerWidget)
         else:
             LogManager.Log('SchedulerMenuBehavior: Invalid return value -- contacting your software maintainer.', LogManager.LogType.Error)

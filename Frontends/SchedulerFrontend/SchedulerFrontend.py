@@ -30,7 +30,9 @@ class ExperimentScheduler(QtWidgets.QWidget, SchdulerFrontendForm.Ui_SchedulerFo
 
         # 事件绑定，此处模块导入滞后，防止循环导入造成标识符缺失报错
         from Frontends.SchedulerFrontend.SchedulerMenuBehavior import SchedulerMenuBehavior
-        # self.itemTable.AddMenuCallback(lambda item: SchedulerMenuBehavior.MenuEntrance(item, self))
+        self.itemTable.GetViewWidget().AddMenuCallback(
+            lambda item: SchedulerMenuBehavior.MenuEntrance(item, self.itemTable)
+        )
 
         form.ImportFromWavePanelBtn.clicked.connect(
             lambda: SchedulerFrontendButtonBehavior.ImportButtons.ImportFromWavePanel(self.itemTable)

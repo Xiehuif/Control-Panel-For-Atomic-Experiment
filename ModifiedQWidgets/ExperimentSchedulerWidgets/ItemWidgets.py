@@ -1,27 +1,16 @@
 import copy
-from enum import Enum, IntEnum, StrEnum
+from enum import StrEnum
 
 from PyQt6 import QtWidgets
 from PyQt6.QtCore import QModelIndex
-from PyQt6.QtWidgets import QTreeView
 
-import MultiprocessSupport.ExperimentProcess
 from DataStructure import DataManager, ExperimentScheduleManager, LogManager, ParameterGeneratorsManager
-import ModifiedQWidgets.GeneralWidgets.EditableTableWidget as EditableTableWidget
 import ModifiedQWidgets.GeneralWidgets.ParameterAcquireDialog as ParameterAcquireDialog
 from DataStructure.PyTree import TreeNode, Tree
-from ModifiedQWidgets.ExperimentSchedulerWidgets import ExperimentItemView
 from ModifiedQWidgets.ExperimentSchedulerWidgets.ExperimentItemView import ItemView
 
 
 class ExperimentScheduleItemTree:
-
-    class MenuItem(StrEnum):
-        Delete = '删除'
-        Copy = '复制'
-        Cut = '剪切'
-        Paste = '粘贴'
-        SelectLeafItems = '选中所有终端项'
 
     def _GetDiscription(self, node, header):
         item: ExperimentScheduleManager.ExperimentSchedulerItemDataBase = node.GetData()
@@ -48,24 +37,15 @@ class ExperimentScheduleItemTree:
 
     def ImportRootItem(self, rootItem: ExperimentScheduleManager.ExperimentSchedulerImportedItemData):
         item = rootItem
-        # data = self._GenerateWidgetItemData(rootItem)
         newNode = self._itemsManager.ImportRootItem(item)
         item.SetAttachedNode(newNode)
         self._view.doItemsLayout()
-        # newTreeWidgetItem = self.InsertItem(data, None, newNode)
-        # self._itemsMap.update({newNode: newTreeWidgetItem})
 
     def InsertDerivedItems(self, parentNode: TreeNode, items: list[ExperimentScheduleManager.ExperimentSchedulerDerivedItemData]):
         for item in items:
             copiedItem = copy.deepcopy(item)
             self._itemsManager.ImportDerivedItem(parentNode, copiedItem)
         self._view.doItemsLayout()
-            # data = self._GenerateWidgetItemData(copiedItem)
-            # newTreeWidgetItem = self.InsertItem(data, self._itemsMap.get(newNode.GetParent()), newNode)
-            # self._itemsMap.update({newNode: newTreeWidgetItem})
-
-    def GetTreeWidgetItemByTreeNode(self, treeNode: TreeNode) -> QtWidgets.QTreeWidgetItem:
-        return self._itemsMap.get(treeNode)
 
     def ExportDataByString(self) -> str:
         return self._itemsManager.Serialize()
@@ -97,32 +77,12 @@ class ExperimentScheduleItemTree:
             # 生成UI控件数据
             self._RetrieveWidgetItems(copiedNode)
 
-    def DeleteItem(self, item: QtWidgets.QTreeWidgetItem) -> bool:
-        widgetItem = item
-        treeNode: TreeNode = self.GetUserData(item)
-        widgetFlag = super().DeleteItem(widgetItem)
+    def DeleteItem(self, index: QModelIndex) -> bool:
+        if index.isValid() != True:
+            return False
+        treeNode: TreeNode = index.internalPointer()
         treeFlag = self._itemsManager.DeleteItem(treeNode.GetData())
-        self._UnbindNode(treeNode)
-        if treeFlag and widgetFlag:
-            return True
-        elif treeFlag is True:
-            LogManager.Log('ExperimentScheduleItemTree: this content exist in Qt widget but not exist in backend, you might check '
-                           'how this report be printed', LogManager.LogType.Error)
-            return False
-        elif widgetFlag is True:
-            LogManager.Log('ExperimentScheduleItemTree: this content exist in Qt widget but not exist in backend, you might check '
-                           'how this report be printed', LogManager.LogType.Error)
-            return False
-        elif (not treeFlag) and (not widgetFlag):
-            LogManager.Log('ExperimentScheduleItemTree: this content does not exist in neither Qt widget nor backend, you might '
-                           'check how this report be printed', LogManager.LogType.Error)
-            return False
-
-    def _UnbindNode(self, node: TreeNode):
-        try:
-            self._itemsMap.pop(node)
-        except KeyError as e:
-            LogManager.Log('Remove item err: remove an node that is not existed', LogManager.LogType.Error)
+        return treeFlag
 
 '''
 2024/10/13
